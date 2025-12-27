@@ -1,25 +1,22 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER (PREMIUM EDITION)
+# EDUFWESH VPN MANAGER - ULTIMATE EDITION
 # =========================================================
 
 # --- BRANDING COLORS ---
-BIBlack='\033[1;90m'      # Black
-BIRed='\033[1;91m'        # Red
-BIGreen='\033[1;92m'      # Green
-BIYellow='\033[1;93m'     # Yellow
-BIBlue='\033[1;94m'       # Blue
-BIPurple='\033[1;95m'     # Purple
-BICyan='\033[1;96m'       # Cyan
-BIWhite='\033[1;97m'      # White
-NC='\033[0m'              # No Color
+BIBlack='\033[1;90m'      BIRed='\033[1;91m'
+BIGreen='\033[1;92m'      BIYellow='\033[1;93m'
+BIBlue='\033[1;94m'       BIPurple='\033[1;95m'
+BICyan='\033[1;96m'       BIWhite='\033[1;97m'
+NC='\033[0m'
 
 # --- SYSTEM INFO ---
 MYIP=$(wget -qO- icanhazip.com)
 DOMAIN=$(cat /etc/xray/domain 2>/dev/null || echo "Domain Not Found")
 RAM=$(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2 }')
 UPTIME=$(uptime -p | cut -d " " -f 2-10)
+ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
 
 # =========================================================
 # INTERNAL FUNCTIONS
@@ -31,18 +28,12 @@ function clear_cache() {
     echo -e "${BIYellow}      OPTIMIZING SERVER PERFORMANCE      ${NC}"
     echo -e "${BICyan}=========================================${NC}"
     sleep 1
-    
     echo -e "${BIWhite}[1/3] Clearing RAM Cache...${NC}"
     sync; echo 3 > /proc/sys/vm/drop_caches
-    
     echo -e "${BIWhite}[2/3] Resetting Swap Memory...${NC}"
     swapoff -a && swapon -a
-    
     echo -e "${BIWhite}[3/3] Deleting Old Log Files...${NC}"
     echo "" > /var/log/syslog
-    echo "" > /var/log/auth.log
-    echo "" > /var/log/kern.log
-    
     echo -e "${BIGreen}SUCCESS! Server is now fresh.${NC}"
     read -n 1 -s -r -p "Press any key to return to menu"
     menu
@@ -53,8 +44,6 @@ function auto_reboot() {
     echo -e "${BICyan}=========================================${NC}"
     echo -e "${BIYellow}        AUTO-REBOOT SCHEDULER            ${NC}"
     echo -e "${BICyan}=========================================${NC}"
-    echo -e "Scheduled reboots keep your VPN stable."
-    echo ""
     echo -e "   [1] Set Auto-Reboot (Every Midnight 00:00)"
     echo -e "   [2] Disable Auto-Reboot"
     echo ""
@@ -79,6 +68,138 @@ function fix_services() {
     echo -e "${BICyan}=========================================${NC}"
     echo -e "${BIYellow}      FIXING SSL & RESTARTING SERVICES   ${NC}"
     echo -e "${BICyan}=========================================${NC}"
+    echo -e "${BIWhite}Restarting Xray, Nginx, and SSH...${NC}"
+    systemctl restart nginx
+    systemctl restart xray
+    systemctl restart ssh
+    systemctl restart sshd
+    echo -e "${BIGreen}Done! Connections refreshed.${NC}"
+    read -n 1 -s -r -p "Press any key to return to menu"
+    menu
+}
+
+function change_domain() {
+    clear
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "${BIYellow}         CHANGE VPS HOST / DOMAIN        ${NC}"
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "${BIWhite}Current Domain: ${BIGreen}$DOMAIN${NC}"
+    echo ""
+    echo -e "${BIRed}WARNING: Make sure your new domain is already pointed"
+    echo -e "to this VPS IP Address ($MYIP) on Cloudflare!${NC}"
+    echo ""
+    read -p "Enter New Domain: " new_domain
+    
+    if [[ -z "$new_domain" ]]; then
+        echo "Aborted."
+        sleep 2
+        menu
+    fi
+
+    echo -e "${BIWhite}Updating config files...${NC}"
+    echo "$new_domain" > /etc/xray/domain
+    echo "$new_domain" > /root/domain
+    
+    # Attempt to use standard acme/certbot if available
+    echo -e "${BIWhite}Attempting to renew SSL...${NC}"
+    if command -v certv2ray &> /dev/null; then
+        certv2ray
+    else
+        systemctl restart nginx
+        systemctl restart xray
+    fi
+    
+    echo -e "${BIGreen}Domain updated to: $new_domain${NC}"
+    read -n 1 -s -r -p "Press any key to return to menu"
+    menu
+}
+
+function backup_configs() {
+    clear
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "${BIYellow}       BACKUP VPN CONFIGURATIONS         ${NC}"
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "Backing up /etc/xray and important configs..."
+    
+    # Create a backup folder
+    mkdir -p /root/backup_edu
+    cp -r /etc/xray /root/backup_edu/xray_backup 2>/dev/null
+    cp /etc/passwd /root/backup_edu/passwd_backup 2>/dev/null
+    
+    # Zip it
+    zip -r /root/vpn_backup.zip /root/backup_edu > /dev/null 2>&1
+    
+    echo -e "${BIGreen}Backup created at: /root/vpn_backup.zip${NC}"
+    echo -e "You can download this file using SFTP."
+    
+    # Clean up temp folder
+    rm -rf /root/backup_edu
+    
+    read -n 1 -s -r -p "Press any key to return to menu"
+    menu
+}
+
+# =========================================================
+# MAIN MENU DISPLAY
+# =========================================================
+function show_menu() {
+    clear
+    echo -e "${BICyan} ╔═════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BICyan} ║          ${BIYellow}EDUFWESH VPN MANAGER PREMIUM v4.0          ${BICyan}║${NC}"
+    echo -e "${BICyan} ╚═════════════════════════════════════════════════════╝${NC}"
+    echo -e "${BIWhite}   ISP Provider : ${BIPurple}$ISP${NC}"
+    echo -e "${BIWhite}   Server IP    : ${BIPurple}$MYIP${NC}"
+    echo -e "${BIWhite}   Domain       : ${BIPurple}$DOMAIN${NC}"
+    echo -e "${BICyan} ───────────────────────────────────────────────────────${NC}"
+    
+    echo -e "${BIYellow}   [ USER MANAGEMENT ]${NC}"
+    echo -e "   ${BICyan}[01]${NC} ${BIWhite}Create SSH/WS Account${NC}"
+    echo -e "   ${BICyan}[02]${NC} ${BIWhite}Create V2Ray/Xray Account${NC}"
+    echo -e "   ${BICyan}[03]${NC} ${BIWhite}Check User Login / Info${NC}"
+    echo -e "   ${BICyan}[04]${NC} ${BIWhite}Delete / Lock User${NC}"
+
+    echo -e " "
+    echo -e "${BIYellow}   [ SERVER MAINTENANCE ]${NC}"
+    echo -e "   ${BICyan}[05]${NC} ${BIWhite}Check System Status${NC}"
+    echo -e "   ${BICyan}[06]${NC} ${BIWhite}Speedtest${NC}"
+    echo -e "   ${BICyan}[07]${NC} ${BIWhite}Reboot Server${NC}"
+    echo -e "   ${BICyan}[08]${NC} ${BIGreen}Clear RAM & Logs (Boost)${NC}"
+    echo -e "   ${BICyan}[09]${NC} ${BIGreen}Fix SSL / Restart Services${NC}"
+    
+    echo -e " "
+    echo -e "${BIYellow}   [ ADVANCED ]${NC}"
+    echo -e "   ${BICyan}[10]${NC} ${BIGreen}Auto-Reboot Settings${NC}"
+    echo -e "   ${BICyan}[11]${NC} ${BIGreen}Change Host / Domain${NC}"
+    echo -e "   ${BICyan}[12]${NC} ${BIGreen}Backup Configs${NC}"
+    
+    echo -e "${BICyan} ───────────────────────────────────────────────────────${NC}"
+    echo -e "   ${BICyan}[00]${NC} ${BIRed}Exit Panel${NC}"
+    echo -e "${BICyan} ───────────────────────────────────────────────────────${NC}"
+    read -p "   Select Menu :  " opt
+
+    case $opt in
+        01 | 1) clear ; usernew ;;         
+        02 | 2) clear ; add-ws ;;          
+        03 | 3) clear ; cek ;;             
+        04 | 4) clear ; member ;;          
+        05 | 5) clear ; status ;;          
+        06 | 6) clear ; speedtest ;;
+        07 | 7) clear ; reboot ;;
+        
+        # New Internal Functions
+        08 | 8) clear ; clear_cache ;;
+        09 | 9) clear ; fix_services ;;
+        10 | 10) clear ; auto_reboot ;;
+        11 | 11) clear ; change_domain ;;
+        12 | 12) clear ; backup_configs ;;
+        
+        00 | 0) clear ; exit 0 ;;
+        *) clear ; echo "Invalid Option" ; sleep 1 ; show_menu ;;
+    esac
+}
+
+# Start the menu
+show_menu
     echo -e "${BIWhite}Stopping Services...${NC}"
     systemctl stop nginx
     systemctl stop xray
