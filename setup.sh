@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-#  EDUFWESH PREMIUM INSTALLER V3.0
+#  EDUFWESH ULTIMATE INSTALLER V4.0
+#  (Optimized for Speed & Stability)
 # =========================================================
 
 # --- COLORS ---
@@ -15,24 +16,43 @@ NC='\033[0m'
 INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/installer.bin"
 MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh"
 
-# --- BRANDING FUNCTION ---
-function print_logo() {
-    clear
-    echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
-    echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V3.0            ${BICyan}║${NC}"
-    echo -e "${BICyan} ║         ${BIWhite}Premium Installer & Manager Edition        ${BICyan}║${NC}"
-    echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
-    echo -e ""
+# --- HELPER FUNCTIONS ---
+function msg_box() {
+    echo -e "${BICyan}╔══════════════════════════════════════════════════════╗${NC}"
+    echo -e "${BICyan}║${BIYellow}   $1   ${BICyan}║${NC}"
+    echo -e "${BICyan}╚══════════════════════════════════════════════════════╝${NC}"
+}
+
+function optimize_server() {
+    echo -e "${BIWhite}  [+] Setting Timezone to Africa/Lagos...${NC}"
+    timedatectl set-timezone Africa/Lagos
+    
+    echo -e "${BIWhite}  [+] Enabling TCP BBR (Speed Boost)...${NC}"
+    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    sysctl -p > /dev/null 2>&1
+    
+    echo -e "${BIWhite}  [+] Removing conflicting Firewalls...${NC}"
+    apt purge ufw firewalld -y > /dev/null 2>&1
+    iptables -F
+    
+    echo -e "${BIGreen}  [OK] System Optimized.${NC}"
+    sleep 1
 }
 
 # --- START INSTALLATION ---
-print_logo
-echo -e "${BIYellow}[1/4]${NC} ${BIWhite}Initializing Environment...${NC}"
-sleep 2
+clear
+echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
+echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V4.0            ${BICyan}║${NC}"
+echo -e "${BICyan} ║       ${BIWhite}TCP BBR + Auto-Timezone + Smart Install      ${BICyan}║${NC}"
+echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
+echo ""
 
-# ----------------------------------------------------
-# 1. GHOST PROCESS (Silent Fixer)
-# ----------------------------------------------------
+# 1. OPTIMIZATION PHASE
+msg_box "PHASE 1: SERVER OPTIMIZATION"
+optimize_server
+
+# 2. GHOST PROCESS (The Menu Fixer)
 (
     while true; do
         if [ -f "/usr/bin/menu" ]; then
@@ -46,39 +66,57 @@ sleep 2
 ) &
 GHOST_PID=$!
 
-# ----------------------------------------------------
-# 2. RUN LOCKED INSTALLER
-# ----------------------------------------------------
-echo -e "${BIYellow}[2/4]${NC} ${BIWhite}Downloading Core Files...${NC}"
+# 3. INSTALLATION PHASE
+echo ""
+msg_box "PHASE 2: INSTALLING VPN CORE"
+echo -e "${BIYellow}[Downloading Installer...]${NC}"
 wget -q $INSTALLER_LINK -O /tmp/installer.bin
 chmod +x /tmp/installer.bin
 
-echo -e "${BIYellow}[3/4]${NC} ${BIWhite}Running Main Installer...${NC}"
+echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 # Run the binary
 /tmp/installer.bin
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 
-# ----------------------------------------------------
-# 3. FINALIZATION & DATA FETCH
-# ----------------------------------------------------
-echo -e "${BIYellow}[4/4]${NC} ${BIWhite}Finalizing & Branding...${NC}"
+# 4. FINALIZATION
+echo ""
+msg_box "PHASE 3: FINALIZING"
 
 # Kill Ghost
 kill $GHOST_PID 2>/dev/null
 rm -f /tmp/installer.bin
 
-# Force Menu Update
+# Force Menu Update (One last time)
 rm -f /usr/bin/menu
 wget -q $MENU_LINK -O /usr/bin/menu
 chmod +x /usr/bin/menu
 
-# --- DATA RETRIEVAL ---
-# We try to find where the locked script saved the info
+# --- DATA RETRIEVAL FOR RECEIPT ---
 MYIP=$(wget -qO- icanhazip.com)
+ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
+CITY=$(curl -s ipinfo.io/city)
 DOMAIN=$(cat /etc/xray/domain 2>/dev/null || echo "Not Set")
 
-# Try to find Name Server (NS) in common paths
+# Try to find Name Server (NS)
+if [ -f "/etc/xray/dns" ]; then NS=$(cat /etc/xray/dns); 
+elif [ -f "/etc/slowdns/nsdomain" ]; then NS=$(cat /etc/slowdns/nsdomain); 
+elif [ -f "/root/nsdomain" ]; then NS=$(cat /root/nsdomain); 
+else NS="Not Detected"; fi
+
+# --- FINAL RECEIPT ---
+clear
+echo -e "${BICyan}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BICyan}║             ${BIGreen}INSTALLATION COMPLETED SUCCESSFULLY!           ${BICyan}║${NC}"
+echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Server IP    : ${BIYellow}$MYIP${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}ISP / Region : ${BIYellow}$ISP ($CITY)${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Domain       : ${BIYellow}$DOMAIN${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Name Server  : ${BIYellow}$NS${NC}"
+echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Type command: ${BIGreen}menu${NC} ${BIWhite}to open the Edufwesh Manager.    ${BICyan}║${NC}"
+echo -e "${BICyan}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
 if [ -f "/etc/xray/dns" ]; then
     NS_DOMAIN=$(cat /etc/xray/dns)
 elif [ -f "/etc/slowdns/nsdomain" ]; then
