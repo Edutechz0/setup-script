@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - FIXED BACKUP EDITION v11.1
+# EDUFWESH VPN MANAGER - COMPLETE BACKUP EDITION v12.0
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -32,7 +32,6 @@ function change_banner() {
     echo -e "${BICyan} │          ${BIYellow}EDIT SSH CONNECTION BANNER${BICyan}           │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
     echo -e " ${BIWhite}This message appears when users connect via SSH/VPN.${NC}"
-    echo -e " ${GRAY}You can use HTML tags like <br> for line breaks or colors.${NC}"
     echo -e ""
     echo -e " ${BIYellow}INSTRUCTIONS:${NC}"
     echo -e " 1. The editor will open automatically."
@@ -163,8 +162,37 @@ function change_domain() {
     clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -z "$d" ]]; then menu; fi; echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; systemctl restart nginx xray; echo "Updated."; sleep 1; menu;
 }
 
+# --- UPDATED BACKUP FUNCTION ---
 function backup_configs() {
-    clear; echo "Backing up..."; mkdir -p /root/backup_edu; cp -r /etc/xray /root/backup_edu/xray_backup; zip -r /root/vpn_backup.zip /root/backup_edu >/dev/null 2>&1; rm -rf /root/backup_edu; echo "Saved: /root/vpn_backup.zip"; sleep 2; menu;
+    clear
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "${BIYellow}       BACKUP ALL USERS (SSH + VPN)      ${NC}"
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "Gathering files..."
+    
+    # Create temp folder
+    mkdir -p /root/backup_edu
+    mkdir -p /root/backup_edu/ssh_backup
+    
+    # 1. Backup Xray/V2Ray
+    cp -r /etc/xray /root/backup_edu/xray_backup 2>/dev/null
+    
+    # 2. Backup SSH Users (Passwd, Shadow, Group)
+    cp /etc/passwd /root/backup_edu/ssh_backup/
+    cp /etc/shadow /root/backup_edu/ssh_backup/
+    cp /etc/group /root/backup_edu/ssh_backup/
+    cp /etc/gshadow /root/backup_edu/ssh_backup/
+    
+    # Zip it all
+    zip -r /root/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
+    
+    # Cleanup
+    rm -rf /root/backup_edu
+    
+    echo -e "${BIGreen}Backup created at: /root/vpn_backup.zip${NC}"
+    echo -e "${BIWhite}Contains: Xray Configs + SSH User Database${NC}"
+    sleep 3
+    menu
 }
 
 # =========================================================
@@ -178,7 +206,7 @@ function show_dashboard() {
     
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v11.1${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.0${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
@@ -207,10 +235,7 @@ function show_menu() {
     echo -e "   ${BIYellow}ADVANCED SETTINGS${NC}"
     echo -e "   ${BICyan}• 10${NC}  Fix SSL / Restart Services"
     echo -e "   ${BICyan}• 11${NC}  Auto-Reboot Scheduler"
-    
-    # FIXED: BACKUP OPTION IS NOW VISIBLE
     echo -e "   ${BICyan}• 12${NC}  Backup Configurations"
-    
     echo -e "   ${BICyan}• 13${NC}  Change Domain / Host"
     echo -e "   ${BICyan}• 14${NC}  Change Name Server (NS)"
     echo -e "   ${BICyan}• 15${NC}  Change SSH Banner Message"
@@ -232,15 +257,10 @@ function show_menu() {
         09 | 9) clear ; clear_cache ;;
         10 | 10) clear ; fix_services ;;
         11 | 11) clear ; auto_reboot ;;
-        
-        # LOGIC FOR BACKUP WAS ALWAYS HERE
         12 | 12) clear ; backup_configs ;;
-        
-        # RE-ORDERED
         13 | 13) clear ; change_domain ;;
         14 | 14) clear ; change_ns ;;
         15 | 15) clear ; change_banner ;;
-        
         00 | 0) clear ; exit 0 ;;
         *) show_menu ;;
     esac
