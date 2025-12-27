@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-#  EDUFWESH ULTIMATE INSTALLER V4.0
-#  (Optimized for Speed & Stability)
+#  EDUFWESH UNIVERSAL INSTALLER V6.0
+#  (Supports Debian 9-12, Ubuntu 18-24 via OS Masquerading)
 # =========================================================
 
 # --- COLORS ---
@@ -21,6 +21,53 @@ function msg_box() {
     echo -e "${BICyan}╔══════════════════════════════════════════════════════╗${NC}"
     echo -e "${BICyan}║${BIYellow}   $1   ${BICyan}║${NC}"
     echo -e "${BICyan}╚══════════════════════════════════════════════════════╝${NC}"
+}
+
+# --- OS SPOOFING LOGIC (The Trick) ---
+function fake_os_start() {
+    # Backup real OS release file
+    cp /etc/os-release /etc/os-release.bak
+    
+    # Detect if Ubuntu or Debian
+    if grep -q "Ubuntu" /etc/os-release; then
+        # Pretend to be Ubuntu 20.04 (Focal) - widely supported
+        echo -e "${BIYellow}[!] Spoofing OS as Ubuntu 20.04 for compatibility...${NC}"
+        cat > /etc/os-release <<EOF
+PRETTY_NAME="Ubuntu 20.04.6 LTS"
+NAME="Ubuntu"
+VERSION_ID="20.04"
+VERSION="20.04.6 LTS (Focal Fossa)"
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal
+EOF
+    else
+        # Pretend to be Debian 10 (Buster) - widely supported
+        echo -e "${BIYellow}[!] Spoofing OS as Debian 10 for compatibility...${NC}"
+        cat > /etc/os-release <<EOF
+PRETTY_NAME="Debian GNU/Linux 10 (buster)"
+NAME="Debian GNU/Linux"
+VERSION_ID="10"
+VERSION="10 (buster)"
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+EOF
+    fi
+}
+
+function restore_os_end() {
+    # Restore the real OS file immediately
+    if [ -f "/etc/os-release.bak" ]; then
+        mv /etc/os-release.bak /etc/os-release
+        echo -e "${BIGreen}[✓] Real OS Identity Restored.${NC}"
+    fi
 }
 
 function optimize_server() {
@@ -43,8 +90,8 @@ function optimize_server() {
 # --- START INSTALLATION ---
 clear
 echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V4.0            ${BICyan}║${NC}"
-echo -e "${BICyan} ║       ${BIWhite}TCP BBR + Auto-Timezone + Smart Install      ${BICyan}║${NC}"
+echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.0            ${BICyan}║${NC}"
+echo -e "${BICyan} ║       ${BIWhite}Multi-OS Support + BBR + Ghost Fixer         ${BICyan}║${NC}"
 echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -66,18 +113,25 @@ optimize_server
 ) &
 GHOST_PID=$!
 
-# 3. INSTALLATION PHASE
+# 3. INSTALLATION PHASE (With OS Masquerade)
 echo ""
 msg_box "PHASE 2: INSTALLING VPN CORE"
+
+# Enable Masquerade
+fake_os_start
+
 echo -e "${BIYellow}[Downloading Installer...]${NC}"
 wget -q $INSTALLER_LINK -O /tmp/installer.bin
 chmod +x /tmp/installer.bin
 
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
-# Run the binary
+# Run the binary (It will now think the OS is compatible)
 /tmp/installer.bin
 echo -e "${BICyan}--------------------------------------------------------${NC}"
+
+# Disable Masquerade (Restore Real OS)
+restore_os_end
 
 # 4. FINALIZATION
 echo ""
@@ -87,7 +141,7 @@ msg_box "PHASE 3: FINALIZING"
 kill $GHOST_PID 2>/dev/null
 rm -f /tmp/installer.bin
 
-# Force Menu Update (One last time)
+# Force Menu Update
 rm -f /usr/bin/menu
 wget -q $MENU_LINK -O /usr/bin/menu
 chmod +x /usr/bin/menu
@@ -96,7 +150,7 @@ chmod +x /usr/bin/menu
 MYIP=$(wget -qO- icanhazip.com)
 ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
 CITY=$(curl -s ipinfo.io/city)
-DOMAIN=$(cat /etc/xray/domain 2>/dev/null || echo "Not Set")
+DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
 
 # Try to find Name Server (NS)
 if [ -f "/etc/xray/dns" ]; then NS=$(cat /etc/xray/dns); 
@@ -117,27 +171,4 @@ echo -e "${BICyan}╠═══════════════════�
 echo -e "${BICyan}║${NC}  ${BIWhite}Type command: ${BIGreen}menu${NC} ${BIWhite}to open the Edufwesh Manager.    ${BICyan}║${NC}"
 echo -e "${BICyan}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-if [ -f "/etc/xray/dns" ]; then
-    NS_DOMAIN=$(cat /etc/xray/dns)
-elif [ -f "/etc/slowdns/nsdomain" ]; then
-    NS_DOMAIN=$(cat /etc/slowdns/nsdomain)
-elif [ -f "/root/nsdomain" ]; then
-    NS_DOMAIN=$(cat /root/nsdomain)
-else
-    NS_DOMAIN="Not Set / Unknown"
-fi
 
-# ----------------------------------------------------
-# 4. PREMIUM SUMMARY DISPLAY
-# ----------------------------------------------------
-clear
-echo -e "${BICyan}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan}║             ${BIGreen}INSTALLATION COMPLETED SUCCESSFULLY!           ${BICyan}║${NC}"
-echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}Server IP    : ${BIYellow}$MYIP${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}Domain       : ${BIYellow}$DOMAIN${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}Name Server  : ${BIYellow}$NS_DOMAIN${NC}"
-echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}To open the panel, type command: ${BIGreen}menu${NC}                  ${BICyan}║${NC}"
-echo -e "${BICyan}╚════════════════════════════════════════════════════════════╝${NC}"
-echo ""
