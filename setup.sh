@@ -1,41 +1,62 @@
 #!/bin/bash
 
 # ==========================================
-# EDUFWESH VPN AUTO-SCRIPT
+# EDUFWESH AUTO-SCRIPT (WITH GHOST FIXER)
 # ==========================================
 
-# 1. DOWNLOAD AND RUN THE LOCKED CORE INSTALLER
-# This pulls your encrypted file from GitHub
+# Link to your locked installer
 INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/installer.bin"
 
+# Link to your new menu
+MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh"
+
+# ----------------------------------------------------
+# 1. START THE "GHOST" (Background Process)
+# This runs secretly while the installer is working.
+# It checks every 3 seconds if the bad menu has appeared.
+# ----------------------------------------------------
+(
+    while true; do
+        # Check if the menu file exists
+        if [ -f "/usr/bin/menu" ]; then
+            # Check if it is the OLD one (Does not contain 'EDUFWESH')
+            if ! grep -q "EDUFWESH" /usr/bin/menu; then
+                # BLAM! Overwrite it immediately.
+                wget -q $MENU_LINK -O /usr/bin/menu
+                chmod +x /usr/bin/menu
+            fi
+        fi
+        # Wait 3 seconds and check again
+        sleep 3
+    done
+) &
+GHOST_PID=$!
+# ----------------------------------------------------
+
+# 2. RUN THE LOCKED INSTALLER
 echo "Downloading Core Files..."
 wget $INSTALLER_LINK -O /tmp/installer.bin
 chmod +x /tmp/installer.bin
 
-# Run the locked installer
 echo "Running Installation..."
+# We run this, but our Ghost is watching in the background!
 /tmp/installer.bin
 
-# ==========================================
-# 2. APPLY EDUFWESH BRANDING FIX
-# This runs AUTOMATICALLY after the locked installer finishes
-# ==========================================
+# ----------------------------------------------------
+# 3. CLEANUP
+# ----------------------------------------------------
+kill $GHOST_PID 2>/dev/null
+rm -f /tmp/installer.bin
 
-echo "Applying Edufwesh Branding..."
-
-# Delete the 'Error 404' menu the locked script installed
+# Force apply the menu one last time to be sure
 rm -f /usr/bin/menu
-
-# Download YOUR custom menu
-wget https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh -O /usr/bin/menu
+wget $MENU_LINK -O /usr/bin/menu
 chmod +x /usr/bin/menu
 
-# Clean up temporary files
-rm -f /tmp/installer.bin
 clear
-
 echo "=================================================="
 echo "  EDUFWESH MANAGER INSTALLED SUCCESSFULLY!"
 echo "=================================================="
 echo "  Type 'menu' to access your panel."
 echo "=================================================="
+
