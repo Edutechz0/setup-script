@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - RENEWAL EDITION v9.0
+# EDUFWESH VPN MANAGER - CUSTOM BANNER EDITION v10.0
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -26,7 +26,39 @@ else NS_DOMAIN="Not Set"; fi
 # INTERNAL FUNCTIONS
 # =========================================================
 
-# --- NEW RENEWAL SELECTOR ---
+# --- NEW BANNER EDITOR ---
+function change_banner() {
+    clear
+    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
+    echo -e "${BICyan} │          ${BIYellow}EDIT SSH CONNECTION BANNER${BICyan}           │${NC}"
+    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
+    echo -e " ${BIWhite}This message appears when users connect via SSH/VPN.${NC}"
+    echo -e " ${GRAY}You can use HTML tags like <br> for line breaks or colors.${NC}"
+    echo -e ""
+    echo -e " ${BIYellow}INSTRUCTIONS:${NC}"
+    echo -e " 1. The editor will open automatically."
+    echo -e " 2. Type or paste your new message."
+    echo -e " 3. Press ${BIWhite}Ctrl + X${NC}, then ${BIWhite}Y${NC}, then ${BIWhite}Enter${NC} to save."
+    echo -e ""
+    read -n 1 -s -r -p " Press any key to open editor..."
+    
+    # Check if nano is installed, if not install it
+    if ! command -v nano &> /dev/null; then
+        apt-get install nano -y > /dev/null 2>&1
+    fi
+    
+    nano /etc/issue.net
+    
+    echo -e ""
+    echo -e "${BIWhite}Restarting SSH Service to apply changes...${NC}"
+    service ssh restart
+    service sshd restart
+    
+    echo -e "${BIGreen}Success! New banner is active.${NC}"
+    sleep 2
+    menu
+}
+
 function renew_selector() {
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
@@ -42,10 +74,10 @@ function renew_selector() {
     echo ""
     read -p "   Select > " r_opt
     case $r_opt in
-        1) clear ; renew ;;        # Standard SSH renewal
-        2) clear ; renew-ws ;;     # VMess renewal
-        3) clear ; renew-vless ;;  # VLESS renewal
-        4) clear ; renew-tr ;;     # Trojan renewal
+        1) clear ; renew ;;        
+        2) clear ; renew-ws ;;     
+        3) clear ; renew-vless ;;  
+        4) clear ; renew-tr ;;     
         0) menu ;;
         *) menu ;;
     esac
@@ -78,10 +110,8 @@ function detailed_status() {
     if [ -f "$CONFIG" ]; then
         if grep -q "vmess" "$CONFIG"; then echo -e "  ${BICyan}»${NC} VMess ....................... ${BIGreen}ACTIVE${NC}"; 
         else echo -e "  ${BICyan}»${NC} VMess ....................... ${GRAY}NOT FOUND${NC}"; fi
-        
         if grep -q "vless" "$CONFIG"; then echo -e "  ${BICyan}»${NC} VLESS ....................... ${BIGreen}ACTIVE${NC}"; 
         else echo -e "  ${BICyan}»${NC} VLESS ....................... ${GRAY}NOT FOUND${NC}"; fi
-        
         if grep -q "trojan" "$CONFIG"; then echo -e "  ${BICyan}»${NC} Trojan ...................... ${BIGreen}ACTIVE${NC}"; 
         else echo -e "  ${BICyan}»${NC} Trojan ...................... ${GRAY}NOT FOUND${NC}"; fi
     else
@@ -94,7 +124,6 @@ function detailed_status() {
     LOAD=$(uptime | awk -F'load average:' '{ print $2 }')
     echo -e "  ${BICyan}»${NC} RAM Usage : $RAM"
     echo -e "  ${BICyan}»${NC} CPU Load  :$LOAD"
-    
     echo -e ""
     echo -e "${BICyan}=================================================${NC}"
     read -n 1 -s -r -p "Press any key to return to menu"
@@ -123,19 +152,7 @@ function create_account_selector() {
 }
 
 function change_ns() {
-    clear
-    echo -e "${BICyan}=========================================${NC}"
-    echo -e "${BIYellow}       CHANGE NAME SERVER (NS)           ${NC}"
-    echo -e "${BICyan}=========================================${NC}"
-    echo -e "${BIWhite}Current NS: ${BIGreen}$NS_DOMAIN${NC}"
-    echo ""
-    read -p "Enter New NS: " new_ns
-    if [[ -z "$new_ns" ]]; then menu; fi
-    echo "$new_ns" > /etc/xray/dns
-    echo "$new_ns" > /root/nsdomain
-    echo -e "${BIGreen}Updated!${NC}"
-    sleep 1
-    menu
+    clear; echo -e "${BICyan}=========================================${NC}"; echo -e "${BIYellow}       CHANGE NAME SERVER (NS)           ${NC}"; echo -e "${BICyan}=========================================${NC}"; echo -e "${BIWhite}Current NS: ${BIGreen}$NS_DOMAIN${NC}"; echo ""; read -p "Enter New NS: " new_ns; if [[ -z "$new_ns" ]]; then menu; fi; echo "$new_ns" > /etc/xray/dns; echo "$new_ns" > /root/nsdomain; echo -e "${BIGreen}Updated!${NC}"; sleep 1; menu;
 }
 
 function clear_cache() {
@@ -143,13 +160,7 @@ function clear_cache() {
 }
 
 function auto_reboot() {
-    clear
-    echo -e "${BIYellow}AUTO-REBOOT SETTINGS${NC}"
-    echo -e "[1] Enable (00:00 Daily)  [2] Disable"
-    read -p "Select > " x
-    if [[ "$x" == "1" ]]; then echo "0 0 * * * root reboot" > /etc/cron.d/auto_reboot_edu; echo "Enabled.";
-    elif [[ "$x" == "2" ]]; then rm -f /etc/cron.d/auto_reboot_edu; echo "Disabled."; fi
-    sleep 1; menu
+    clear; echo -e "${BIYellow}AUTO-REBOOT SETTINGS${NC}"; echo -e "[1] Enable (00:00 Daily)  [2] Disable"; read -p "Select > " x; if [[ "$x" == "1" ]]; then echo "0 0 * * * root reboot" > /etc/cron.d/auto_reboot_edu; echo "Enabled."; elif [[ "$x" == "2" ]]; then rm -f /etc/cron.d/auto_reboot_edu; echo "Disabled."; fi; sleep 1; menu;
 }
 
 function fix_services() {
@@ -157,15 +168,11 @@ function fix_services() {
 }
 
 function change_domain() {
-    clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -z "$d" ]]; then menu; fi
-    echo "$d" > /etc/xray/domain; echo "$d" > /root/domain;
-    systemctl restart nginx xray; echo "Updated."; sleep 1; menu;
+    clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -z "$d" ]]; then menu; fi; echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; systemctl restart nginx xray; echo "Updated."; sleep 1; menu;
 }
 
 function backup_configs() {
-    clear; echo "Backing up..."; mkdir -p /root/backup_edu; cp -r /etc/xray /root/backup_edu/xray_backup;
-    zip -r /root/vpn_backup.zip /root/backup_edu >/dev/null 2>&1; rm -rf /root/backup_edu;
-    echo "Saved: /root/vpn_backup.zip"; sleep 2; menu;
+    clear; echo "Backing up..."; mkdir -p /root/backup_edu; cp -r /etc/xray /root/backup_edu/xray_backup; zip -r /root/vpn_backup.zip /root/backup_edu >/dev/null 2>&1; rm -rf /root/backup_edu; echo "Saved: /root/vpn_backup.zip"; sleep 2; menu;
 }
 
 # =========================================================
@@ -179,7 +186,7 @@ function show_dashboard() {
     
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v9.0${NC}             ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v10.0${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
@@ -195,7 +202,6 @@ function show_menu() {
     echo -e "   ${BIYellow}USER ACCOUNTS${NC}"
     echo -e "   ${BICyan}• 01${NC}  Create SSH / WS Account"
     echo -e "   ${BICyan}• 02${NC}  Create V2Ray Account ${BIYellow}(Multi-Proto)${NC}"
-    # NEW OPTION ADDED HERE
     echo -e "   ${BICyan}• 03${NC}  ${BIGreen}Renew User Services${NC} ${GRAY}(SSH/Xray)${NC}"
     echo -e "   ${BICyan}• 04${NC}  User Details & Monitor"
     echo -e "   ${BICyan}• 05${NC}  Delete / Lock User"
@@ -211,6 +217,8 @@ function show_menu() {
     echo -e "   ${BICyan}• 11${NC}  Auto-Reboot Scheduler"
     echo -e "   ${BICyan}• 12${NC}  Change Domain / Host"
     echo -e "   ${BICyan}• 13${NC}  Change Name Server (NS)"
+    # NEW BANNER OPTION ADDED HERE
+    echo -e "   ${BICyan}• 14${NC}  ${BIGreen}Change SSH Banner Message${NC}"
     echo -e ""
     echo -e "   ${BICyan}• 00${NC}  ${BIRed}Exit Dashboard${NC}"
     echo -e ""
@@ -220,10 +228,7 @@ function show_menu() {
     case $opt in
         01 | 1) clear ; usernew ;;         
         02 | 2) clear ; create_account_selector ;;
-        
-        # NEW RENEW FUNCTION
         03 | 3) clear ; renew_selector ;;
-        
         04 | 4) clear ; cek ;;             
         05 | 5) clear ; member ;;          
         06 | 6) clear ; detailed_status ;;
@@ -234,6 +239,10 @@ function show_menu() {
         11 | 11) clear ; auto_reboot ;;
         12 | 12) clear ; change_domain ;;
         13 | 13) clear ; change_ns ;;
+        
+        # NEW FUNCTION CALL
+        14 | 14) clear ; change_banner ;;
+        
         00 | 0) clear ; exit 0 ;;
         *) show_menu ;;
     esac
