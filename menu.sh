@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - UNIFORM DESIGN v11.0
+# EDUFWESH VPN MANAGER - FIXED BACKUP EDITION v11.1
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -178,7 +178,7 @@ function show_dashboard() {
     
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v11.0${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v11.1${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
@@ -194,7 +194,6 @@ function show_menu() {
     echo -e "   ${BIYellow}USER ACCOUNTS${NC}"
     echo -e "   ${BICyan}• 01${NC}  Create SSH / WS Account"
     echo -e "   ${BICyan}• 02${NC}  Create V2Ray Account ${BIYellow}(Multi-Proto)${NC}"
-    # COLOR REMOVED HERE
     echo -e "   ${BICyan}• 03${NC}  Renew User Services ${GRAY}(SSH/Xray)${NC}"
     echo -e "   ${BICyan}• 04${NC}  User Details & Monitor"
     echo -e "   ${BICyan}• 05${NC}  Delete / Lock User"
@@ -208,10 +207,13 @@ function show_menu() {
     echo -e "   ${BIYellow}ADVANCED SETTINGS${NC}"
     echo -e "   ${BICyan}• 10${NC}  Fix SSL / Restart Services"
     echo -e "   ${BICyan}• 11${NC}  Auto-Reboot Scheduler"
-    echo -e "   ${BICyan}• 12${NC}  Change Domain / Host"
-    echo -e "   ${BICyan}• 13${NC}  Change Name Server (NS)"
-    # COLOR REMOVED HERE
-    echo -e "   ${BICyan}• 14${NC}  Change SSH Banner Message"
+    
+    # FIXED: BACKUP OPTION IS NOW VISIBLE
+    echo -e "   ${BICyan}• 12${NC}  Backup Configurations"
+    
+    echo -e "   ${BICyan}• 13${NC}  Change Domain / Host"
+    echo -e "   ${BICyan}• 14${NC}  Change Name Server (NS)"
+    echo -e "   ${BICyan}• 15${NC}  Change SSH Banner Message"
     echo -e ""
     echo -e "   ${BICyan}• 00${NC}  ${BIRed}Exit Dashboard${NC}"
     echo -e ""
@@ -230,9 +232,15 @@ function show_menu() {
         09 | 9) clear ; clear_cache ;;
         10 | 10) clear ; fix_services ;;
         11 | 11) clear ; auto_reboot ;;
-        12 | 12) clear ; change_domain ;;
-        13 | 13) clear ; change_ns ;;
-        14 | 14) clear ; change_banner ;;
+        
+        # LOGIC FOR BACKUP WAS ALWAYS HERE
+        12 | 12) clear ; backup_configs ;;
+        
+        # RE-ORDERED
+        13 | 13) clear ; change_domain ;;
+        14 | 14) clear ; change_ns ;;
+        15 | 15) clear ; change_banner ;;
+        
         00 | 0) clear ; exit 0 ;;
         *) show_menu ;;
     esac
