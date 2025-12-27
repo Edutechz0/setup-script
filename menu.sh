@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - DEEP STATUS EDITION v8.0
+# EDUFWESH VPN MANAGER - RENEWAL EDITION v9.0
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -26,10 +26,33 @@ else NS_DOMAIN="Not Set"; fi
 # INTERNAL FUNCTIONS
 # =========================================================
 
+# --- NEW RENEWAL SELECTOR ---
+function renew_selector() {
+    clear
+    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
+    echo -e "${BICyan} │           ${BIYellow}RENEW USER ACCOUNT${BICyan}                  │${NC}"
+    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
+    echo -e "   ${BIWhite}[1]${NC}  Renew SSH / WS Account"
+    echo -e "   ${BICyan}───────────────────────────────────────────────${NC}"
+    echo -e "   ${BIWhite}[2]${NC}  Renew VMess Account"
+    echo -e "   ${BIWhite}[3]${NC}  Renew VLESS Account"
+    echo -e "   ${BIWhite}[4]${NC}  Renew Trojan Account"
+    echo -e ""
+    echo -e "   ${BICyan}[0]${NC}  ${BIRed}Cancel${NC}"
+    echo ""
+    read -p "   Select > " r_opt
+    case $r_opt in
+        1) clear ; renew ;;        # Standard SSH renewal
+        2) clear ; renew-ws ;;     # VMess renewal
+        3) clear ; renew-vless ;;  # VLESS renewal
+        4) clear ; renew-tr ;;     # Trojan renewal
+        0) menu ;;
+        *) menu ;;
+    esac
+}
+
 function check_service() {
-    # Usage: check_service "Display Name" "service_name"
-    name=$1
-    service=$2
+    name=$1; service=$2
     if systemctl is-active --quiet $service; then
         echo -e "  ${BICyan}»${NC} $name ${GRAY}..................${NC} ${BIGreen}RUNNING${NC}"
     else
@@ -43,7 +66,6 @@ function detailed_status() {
     echo -e "${BICyan} │           ${BIYellow}DETAILED SYSTEM DIAGNOSTICS${BICyan}         │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
     echo -e ""
-    
     echo -e " ${BIYellow}[ CORE SERVICES ]${NC}"
     check_service "SSH Service" "ssh"
     check_service "VPN Core (Xray)" "xray"
@@ -51,24 +73,7 @@ function detailed_status() {
     check_service "Task Scheduler" "cron"
     
     echo -e ""
-    echo -e " ${BIYellow}[ OPTIONAL SERVICES ]${NC}"
-    # We check these silently; if they don't exist, we assume 'Not Installed' or skip
-    if systemctl list-units --all -t service --full --no-legend | grep -q "dropbear"; then
-        check_service "Dropbear SSH" "dropbear"
-    fi
-    if systemctl list-units --all -t service --full --no-legend | grep -q "stunnel4"; then
-        check_service "SSL Tunnel (Stunnel)" "stunnel4"
-    fi
-    if systemctl list-units --all -t service --full --no-legend | grep -q "squid"; then
-        check_service "Squid Proxy" "squid"
-    fi
-    if systemctl list-units --all -t service --full --no-legend | grep -q "fail2ban"; then
-        check_service "Fail2Ban Protection" "fail2ban"
-    fi
-
-    echo -e ""
     echo -e " ${BIYellow}[ PROTOCOL DETECTION ]${NC}"
-    # Check Xray Config for Protocols
     CONFIG="/etc/xray/config.json"
     if [ -f "$CONFIG" ]; then
         if grep -q "vmess" "$CONFIG"; then echo -e "  ${BICyan}»${NC} VMess ....................... ${BIGreen}ACTIVE${NC}"; 
@@ -79,10 +84,8 @@ function detailed_status() {
         
         if grep -q "trojan" "$CONFIG"; then echo -e "  ${BICyan}»${NC} Trojan ...................... ${BIGreen}ACTIVE${NC}"; 
         else echo -e "  ${BICyan}»${NC} Trojan ...................... ${GRAY}NOT FOUND${NC}"; fi
-        
-        if grep -q "shadowsocks" "$CONFIG"; then echo -e "  ${BICyan}»${NC} Shadowsocks ................. ${BIGreen}ACTIVE${NC}"; fi
     else
-        echo -e "  ${BIRed}Error: Xray Config Not Found ($CONFIG)${NC}"
+        echo -e "  ${BIRed}Error: Xray Config Not Found${NC}"
     fi
 
     echo -e ""
@@ -176,7 +179,7 @@ function show_dashboard() {
     
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v8.0${NC}             ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v9.0${NC}             ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
@@ -192,20 +195,21 @@ function show_menu() {
     echo -e "   ${BIYellow}USER ACCOUNTS${NC}"
     echo -e "   ${BICyan}• 01${NC}  Create SSH / WS Account"
     echo -e "   ${BICyan}• 02${NC}  Create V2Ray Account ${BIYellow}(Multi-Proto)${NC}"
-    echo -e "   ${BICyan}• 03${NC}  User Details & Monitor"
-    echo -e "   ${BICyan}• 04${NC}  Delete / Lock User"
+    # NEW OPTION ADDED HERE
+    echo -e "   ${BICyan}• 03${NC}  ${BIGreen}Renew User Services${NC} ${GRAY}(SSH/Xray)${NC}"
+    echo -e "   ${BICyan}• 04${NC}  User Details & Monitor"
+    echo -e "   ${BICyan}• 05${NC}  Delete / Lock User"
     echo -e ""
     echo -e "   ${BIYellow}SYSTEM TOOLS${NC}"
-    echo -e "   ${BICyan}• 05${NC}  Detailed System Status ${BIGreen}(NEW)${NC}"
-    echo -e "   ${BICyan}• 06${NC}  Speedtest Benchmark"
-    echo -e "   ${BICyan}• 07${NC}  Reboot Server"
-    echo -e "   ${BICyan}• 08${NC}  Clear RAM & Logs ${BIGreen}(Optimized)${NC}"
+    echo -e "   ${BICyan}• 06${NC}  Detailed System Status"
+    echo -e "   ${BICyan}• 07${NC}  Speedtest Benchmark"
+    echo -e "   ${BICyan}• 08${NC}  Reboot Server"
+    echo -e "   ${BICyan}• 09${NC}  Clear RAM & Logs"
     echo -e ""
     echo -e "   ${BIYellow}ADVANCED SETTINGS${NC}"
-    echo -e "   ${BICyan}• 09${NC}  Fix SSL / Restart Services"
-    echo -e "   ${BICyan}• 10${NC}  Auto-Reboot Scheduler"
-    echo -e "   ${BICyan}• 11${NC}  Change Domain / Host"
-    echo -e "   ${BICyan}• 12${NC}  Backup Configurations"
+    echo -e "   ${BICyan}• 10${NC}  Fix SSL / Restart Services"
+    echo -e "   ${BICyan}• 11${NC}  Auto-Reboot Scheduler"
+    echo -e "   ${BICyan}• 12${NC}  Change Domain / Host"
     echo -e "   ${BICyan}• 13${NC}  Change Name Server (NS)"
     echo -e ""
     echo -e "   ${BICyan}• 00${NC}  ${BIRed}Exit Dashboard${NC}"
@@ -215,17 +219,20 @@ function show_menu() {
 
     case $opt in
         01 | 1) clear ; usernew ;;         
-        02 | 2) clear ; create_account_selector ;;          
-        03 | 3) clear ; cek ;;             
-        04 | 4) clear ; member ;;          
-        05 | 5) clear ; detailed_status ;;  # Using the new deep checker
-        06 | 6) clear ; speedtest ;;
-        07 | 7) clear ; reboot ;;
-        08 | 8) clear ; clear_cache ;;
-        09 | 9) clear ; fix_services ;;
-        10 | 10) clear ; auto_reboot ;;
-        11 | 11) clear ; change_domain ;;
-        12 | 12) clear ; backup_configs ;;
+        02 | 2) clear ; create_account_selector ;;
+        
+        # NEW RENEW FUNCTION
+        03 | 3) clear ; renew_selector ;;
+        
+        04 | 4) clear ; cek ;;             
+        05 | 5) clear ; member ;;          
+        06 | 6) clear ; detailed_status ;;
+        07 | 7) clear ; speedtest ;;
+        08 | 8) clear ; reboot ;;
+        09 | 9) clear ; clear_cache ;;
+        10 | 10) clear ; fix_services ;;
+        11 | 11) clear ; auto_reboot ;;
+        12 | 12) clear ; change_domain ;;
         13 | 13) clear ; change_ns ;;
         00 | 0) clear ; exit 0 ;;
         *) show_menu ;;
