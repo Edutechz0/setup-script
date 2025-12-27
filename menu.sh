@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - CUSTOM BANNER EDITION v10.0
+# EDUFWESH VPN MANAGER - UNIFORM DESIGN v11.0
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -26,7 +26,6 @@ else NS_DOMAIN="Not Set"; fi
 # INTERNAL FUNCTIONS
 # =========================================================
 
-# --- NEW BANNER EDITOR ---
 function change_banner() {
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
@@ -41,19 +40,12 @@ function change_banner() {
     echo -e " 3. Press ${BIWhite}Ctrl + X${NC}, then ${BIWhite}Y${NC}, then ${BIWhite}Enter${NC} to save."
     echo -e ""
     read -n 1 -s -r -p " Press any key to open editor..."
-    
-    # Check if nano is installed, if not install it
-    if ! command -v nano &> /dev/null; then
-        apt-get install nano -y > /dev/null 2>&1
-    fi
-    
+    if ! command -v nano &> /dev/null; then apt-get install nano -y > /dev/null 2>&1; fi
     nano /etc/issue.net
-    
     echo -e ""
     echo -e "${BIWhite}Restarting SSH Service to apply changes...${NC}"
     service ssh restart
     service sshd restart
-    
     echo -e "${BIGreen}Success! New banner is active.${NC}"
     sleep 2
     menu
@@ -186,7 +178,7 @@ function show_dashboard() {
     
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v10.0${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v11.0${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
@@ -202,7 +194,8 @@ function show_menu() {
     echo -e "   ${BIYellow}USER ACCOUNTS${NC}"
     echo -e "   ${BICyan}• 01${NC}  Create SSH / WS Account"
     echo -e "   ${BICyan}• 02${NC}  Create V2Ray Account ${BIYellow}(Multi-Proto)${NC}"
-    echo -e "   ${BICyan}• 03${NC}  ${BIGreen}Renew User Services${NC} ${GRAY}(SSH/Xray)${NC}"
+    # COLOR REMOVED HERE
+    echo -e "   ${BICyan}• 03${NC}  Renew User Services ${GRAY}(SSH/Xray)${NC}"
     echo -e "   ${BICyan}• 04${NC}  User Details & Monitor"
     echo -e "   ${BICyan}• 05${NC}  Delete / Lock User"
     echo -e ""
@@ -217,8 +210,8 @@ function show_menu() {
     echo -e "   ${BICyan}• 11${NC}  Auto-Reboot Scheduler"
     echo -e "   ${BICyan}• 12${NC}  Change Domain / Host"
     echo -e "   ${BICyan}• 13${NC}  Change Name Server (NS)"
-    # NEW BANNER OPTION ADDED HERE
-    echo -e "   ${BICyan}• 14${NC}  ${BIGreen}Change SSH Banner Message${NC}"
+    # COLOR REMOVED HERE
+    echo -e "   ${BICyan}• 14${NC}  Change SSH Banner Message"
     echo -e ""
     echo -e "   ${BICyan}• 00${NC}  ${BIRed}Exit Dashboard${NC}"
     echo -e ""
@@ -239,10 +232,7 @@ function show_menu() {
         11 | 11) clear ; auto_reboot ;;
         12 | 12) clear ; change_domain ;;
         13 | 13) clear ; change_ns ;;
-        
-        # NEW FUNCTION CALL
         14 | 14) clear ; change_banner ;;
-        
         00 | 0) clear ; exit 0 ;;
         *) show_menu ;;
     esac
