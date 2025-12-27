@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # =========================================================
-#  EDUFWESH UNIVERSAL INSTALLER V6.2
+#  EDUFWESH UNIVERSAL INSTALLER V6.3
 #  (Supports Debian 9-12, Ubuntu 18.04 - 24.04)
-#  (Includes: OS Masquerade + Permission Safety Fix)
+#  (FIXED: Download Links & Permissions)
 # =========================================================
 
 # --- COLORS ---
@@ -13,9 +13,10 @@ BIBlue='\033[1;94m'       BIPurple='\033[1;95m'
 BICyan='\033[1;96m'       BIWhite='\033[1;97m'
 NC='\033[0m'
 
-# --- LINKS ---
-INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/installer.bin"
-MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh"
+# --- LINKS (FIXED) ---
+# We removed "refs/heads/" to ensure wget downloads the actual file, not a 404
+INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/main/installer.bin"
+MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/main/menu.sh"
 
 # --- HELPER FUNCTIONS ---
 function msg_box() {
@@ -92,8 +93,8 @@ function optimize_server() {
 # --- START INSTALLATION ---
 clear
 echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.2            ${BICyan}║${NC}"
-echo -e "${BICyan} ║       ${BIWhite}Ubuntu 24.04 Support + Permission Fix        ${BICyan}║${NC}"
+echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.3            ${BICyan}║${NC}"
+echo -e "${BICyan} ║       ${BIWhite}Ubuntu 24.04 Support + Link Fixes            ${BICyan}║${NC}"
 echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
