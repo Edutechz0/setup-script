@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # =========================================================
-#  EDUFWESH UNIVERSAL INSTALLER V6.1
+#  EDUFWESH UNIVERSAL INSTALLER V6.2
 #  (Supports Debian 9-12, Ubuntu 18.04 - 24.04)
+#  (Includes: OS Masquerade + Permission Safety Fix)
 # =========================================================
 
 # --- COLORS ---
@@ -91,8 +92,8 @@ function optimize_server() {
 # --- START INSTALLATION ---
 clear
 echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.1            ${BICyan}║${NC}"
-echo -e "${BICyan} ║       ${BIWhite}Ubuntu 24.04 Support + Ghost Fixer           ${BICyan}║${NC}"
+echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.2            ${BICyan}║${NC}"
+echo -e "${BICyan} ║       ${BIWhite}Ubuntu 24.04 Support + Permission Fix        ${BICyan}║${NC}"
 echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -145,7 +146,11 @@ rm -f /tmp/installer.bin
 # Force Menu Update
 rm -f /usr/bin/menu
 wget -q $MENU_LINK -O /usr/bin/menu
+
+# --- SAFETY FORCE PERMISSIONS ---
+# This fixes the "Permission Denied" error permanently
 chmod +x /usr/bin/menu
+chmod 777 /usr/bin/menu
 
 # --- DATA RETRIEVAL FOR RECEIPT ---
 MYIP=$(wget -qO- icanhazip.com)
