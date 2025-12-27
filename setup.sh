@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-#  EDUFWESH UNIVERSAL INSTALLER V6.0
-#  (Supports Debian 9-12, Ubuntu 18-24 via OS Masquerading)
+#  EDUFWESH UNIVERSAL INSTALLER V6.1
+#  (Supports Debian 9-12, Ubuntu 18.04 - 24.04)
 # =========================================================
 
 # --- COLORS ---
@@ -23,15 +23,15 @@ function msg_box() {
     echo -e "${BICyan}╚══════════════════════════════════════════════════════╝${NC}"
 }
 
-# --- OS SPOOFING LOGIC (The Trick) ---
+# --- OS SPOOFING LOGIC (Makes 24.04 look like 20.04) ---
 function fake_os_start() {
     # Backup real OS release file
     cp /etc/os-release /etc/os-release.bak
     
-    # Detect if Ubuntu or Debian
+    # Detect if Ubuntu (Works for 20, 22, 24, etc)
     if grep -q "Ubuntu" /etc/os-release; then
-        # Pretend to be Ubuntu 20.04 (Focal) - widely supported
-        echo -e "${BIYellow}[!] Spoofing OS as Ubuntu 20.04 for compatibility...${NC}"
+        echo -e "${BIYellow}[!] Detected Ubuntu System...${NC}"
+        echo -e "${BIYellow}[!] Masquerading as Ubuntu 20.04 LTS for compatibility...${NC}"
         cat > /etc/os-release <<EOF
 PRETTY_NAME="Ubuntu 20.04.6 LTS"
 NAME="Ubuntu"
@@ -47,8 +47,9 @@ VERSION_CODENAME=focal
 UBUNTU_CODENAME=focal
 EOF
     else
-        # Pretend to be Debian 10 (Buster) - widely supported
-        echo -e "${BIYellow}[!] Spoofing OS as Debian 10 for compatibility...${NC}"
+        # Pretend to be Debian 10 for any Debian version (9, 10, 11, 12)
+        echo -e "${BIYellow}[!] Detected Debian System...${NC}"
+        echo -e "${BIYellow}[!] Masquerading as Debian 10 (Buster) for compatibility...${NC}"
         cat > /etc/os-release <<EOF
 PRETTY_NAME="Debian GNU/Linux 10 (buster)"
 NAME="Debian GNU/Linux"
@@ -63,7 +64,7 @@ EOF
 }
 
 function restore_os_end() {
-    # Restore the real OS file immediately
+    # Restore the real OS file immediately so system isn't confused later
     if [ -f "/etc/os-release.bak" ]; then
         mv /etc/os-release.bak /etc/os-release
         echo -e "${BIGreen}[✓] Real OS Identity Restored.${NC}"
@@ -90,8 +91,8 @@ function optimize_server() {
 # --- START INSTALLATION ---
 clear
 echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.0            ${BICyan}║${NC}"
-echo -e "${BICyan} ║       ${BIWhite}Multi-OS Support + BBR + Ghost Fixer         ${BICyan}║${NC}"
+echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.1            ${BICyan}║${NC}"
+echo -e "${BICyan} ║       ${BIWhite}Ubuntu 24.04 Support + Ghost Fixer           ${BICyan}║${NC}"
 echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
