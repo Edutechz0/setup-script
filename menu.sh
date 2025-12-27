@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - COMPLETE BACKUP EDITION v12.0
+# EDUFWESH VPN MANAGER - PUBLIC BACKUP EDITION v12.1
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -162,7 +162,7 @@ function change_domain() {
     clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -z "$d" ]]; then menu; fi; echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; systemctl restart nginx xray; echo "Updated."; sleep 1; menu;
 }
 
-# --- UPDATED BACKUP FUNCTION ---
+# --- UPDATED BACKUP FUNCTION (STORES IN /TMP) ---
 function backup_configs() {
     clear
     echo -e "${BICyan}=========================================${NC}"
@@ -170,28 +170,33 @@ function backup_configs() {
     echo -e "${BICyan}=========================================${NC}"
     echo -e "Gathering files..."
     
-    # Create temp folder
+    # 1. Prepare temp folder
     mkdir -p /root/backup_edu
     mkdir -p /root/backup_edu/ssh_backup
     
-    # 1. Backup Xray/V2Ray
+    # 2. Copy Xray Data
     cp -r /etc/xray /root/backup_edu/xray_backup 2>/dev/null
     
-    # 2. Backup SSH Users (Passwd, Shadow, Group)
+    # 3. Copy SSH User Data
     cp /etc/passwd /root/backup_edu/ssh_backup/
     cp /etc/shadow /root/backup_edu/ssh_backup/
     cp /etc/group /root/backup_edu/ssh_backup/
     cp /etc/gshadow /root/backup_edu/ssh_backup/
     
-    # Zip it all
-    zip -r /root/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
+    # 4. ZIP IT TO /TMP (Public Access)
+    # We save it to /tmp/vpn_backup.zip instead of /root/
+    zip -r /tmp/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
     
-    # Cleanup
+    # 5. UNLOCK PERMISSIONS (Crucial Step)
+    chmod 777 /tmp/vpn_backup.zip
+    
+    # 6. Cleanup
     rm -rf /root/backup_edu
     
-    echo -e "${BIGreen}Backup created at: /root/vpn_backup.zip${NC}"
-    echo -e "${BIWhite}Contains: Xray Configs + SSH User Database${NC}"
-    sleep 3
+    echo -e "${BIGreen}Backup created successfully!${NC}"
+    echo -e "${BIWhite}Location: ${BIYellow}/tmp/vpn_backup.zip${NC}"
+    echo -e "You can now download this file using your SFTP app."
+    sleep 4
     menu
 }
 
@@ -206,7 +211,7 @@ function show_dashboard() {
     
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.0${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.1${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
