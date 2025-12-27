@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-#  EDUFWESH UNIVERSAL INSTALLER V6.3
-#  (Supports Debian 9-12, Ubuntu 18.04 - 24.04)
-#  (FIXED: Download Links & Permissions)
+#  EDUFWESH ULTIMATE INSTALLER V5.0
+#  (Optimized for Speed, Stability & Premium Menu v12)
 # =========================================================
 
 # --- COLORS ---
@@ -13,64 +12,16 @@ BIBlue='\033[1;94m'       BIPurple='\033[1;95m'
 BICyan='\033[1;96m'       BIWhite='\033[1;97m'
 NC='\033[0m'
 
-# --- LINKS (FIXED) ---
-# We removed "refs/heads/" to ensure wget downloads the actual file, not a 404
-INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/main/installer.bin"
-MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/main/menu.sh"
+# --- LINKS ---
+# Ensure these point to your repository
+INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/installer.bin"
+MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh"
 
 # --- HELPER FUNCTIONS ---
 function msg_box() {
     echo -e "${BICyan}╔══════════════════════════════════════════════════════╗${NC}"
     echo -e "${BICyan}║${BIYellow}   $1   ${BICyan}║${NC}"
     echo -e "${BICyan}╚══════════════════════════════════════════════════════╝${NC}"
-}
-
-# --- OS SPOOFING LOGIC (Makes 24.04 look like 20.04) ---
-function fake_os_start() {
-    # Backup real OS release file
-    cp /etc/os-release /etc/os-release.bak
-    
-    # Detect if Ubuntu (Works for 20, 22, 24, etc)
-    if grep -q "Ubuntu" /etc/os-release; then
-        echo -e "${BIYellow}[!] Detected Ubuntu System...${NC}"
-        echo -e "${BIYellow}[!] Masquerading as Ubuntu 20.04 LTS for compatibility...${NC}"
-        cat > /etc/os-release <<EOF
-PRETTY_NAME="Ubuntu 20.04.6 LTS"
-NAME="Ubuntu"
-VERSION_ID="20.04"
-VERSION="20.04.6 LTS (Focal Fossa)"
-ID=ubuntu
-ID_LIKE=debian
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-VERSION_CODENAME=focal
-UBUNTU_CODENAME=focal
-EOF
-    else
-        # Pretend to be Debian 10 for any Debian version (9, 10, 11, 12)
-        echo -e "${BIYellow}[!] Detected Debian System...${NC}"
-        echo -e "${BIYellow}[!] Masquerading as Debian 10 (Buster) for compatibility...${NC}"
-        cat > /etc/os-release <<EOF
-PRETTY_NAME="Debian GNU/Linux 10 (buster)"
-NAME="Debian GNU/Linux"
-VERSION_ID="10"
-VERSION="10 (buster)"
-ID=debian
-HOME_URL="https://www.debian.org/"
-SUPPORT_URL="https://www.debian.org/support"
-BUG_REPORT_URL="https://bugs.debian.org/"
-EOF
-    fi
-}
-
-function restore_os_end() {
-    # Restore the real OS file immediately so system isn't confused later
-    if [ -f "/etc/os-release.bak" ]; then
-        mv /etc/os-release.bak /etc/os-release
-        echo -e "${BIGreen}[✓] Real OS Identity Restored.${NC}"
-    fi
 }
 
 function optimize_server() {
@@ -93,8 +44,8 @@ function optimize_server() {
 # --- START INSTALLATION ---
 clear
 echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V6.3            ${BICyan}║${NC}"
-echo -e "${BICyan} ║       ${BIWhite}Ubuntu 24.04 Support + Link Fixes            ${BICyan}║${NC}"
+echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V5.0            ${BICyan}║${NC}"
+echo -e "${BICyan} ║       ${BIWhite}TCP BBR + Auto-Timezone + Smart Install      ${BICyan}║${NC}"
 echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
@@ -103,9 +54,11 @@ msg_box "PHASE 1: SERVER OPTIMIZATION"
 optimize_server
 
 # 2. GHOST PROCESS (The Menu Fixer)
+# This watches the file system and kills the 'bad' menu immediately
 (
     while true; do
         if [ -f "/usr/bin/menu" ]; then
+            # If the menu file exists but doesn't have your brand, overwrite it
             if ! grep -q "EDUFWESH" /usr/bin/menu; then
                 wget -q $MENU_LINK -O /usr/bin/menu
                 chmod +x /usr/bin/menu
@@ -116,25 +69,18 @@ optimize_server
 ) &
 GHOST_PID=$!
 
-# 3. INSTALLATION PHASE (With OS Masquerade)
+# 3. INSTALLATION PHASE
 echo ""
 msg_box "PHASE 2: INSTALLING VPN CORE"
-
-# Enable Masquerade
-fake_os_start
-
 echo -e "${BIYellow}[Downloading Installer...]${NC}"
 wget -q $INSTALLER_LINK -O /tmp/installer.bin
 chmod +x /tmp/installer.bin
 
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
-# Run the binary (It will now think the OS is compatible)
+# Run the locked binary
 /tmp/installer.bin
 echo -e "${BICyan}--------------------------------------------------------${NC}"
-
-# Disable Masquerade (Restore Real OS)
-restore_os_end
 
 # 4. FINALIZATION
 echo ""
@@ -144,14 +90,10 @@ msg_box "PHASE 3: FINALIZING"
 kill $GHOST_PID 2>/dev/null
 rm -f /tmp/installer.bin
 
-# Force Menu Update
+# Force Menu Update (One last time to be 100% sure)
 rm -f /usr/bin/menu
 wget -q $MENU_LINK -O /usr/bin/menu
-
-# --- SAFETY FORCE PERMISSIONS ---
-# This fixes the "Permission Denied" error permanently
 chmod +x /usr/bin/menu
-chmod 777 /usr/bin/menu
 
 # --- DATA RETRIEVAL FOR RECEIPT ---
 MYIP=$(wget -qO- icanhazip.com)
