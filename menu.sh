@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - MONITOR EDITION v12.5
-# (Added: Bandwidth Monitor, Time Display, Cleaned Menu)
+# EDUFWESH VPN MANAGER - MONITOR EDITION v12.6
+# (Added: Discord/Telegram Auto-Backup, Settings Menu)
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -22,6 +22,101 @@ if [ -f "/etc/xray/dns" ]; then NS_DOMAIN=$(cat /etc/xray/dns);
 elif [ -f "/etc/slowdns/nsdomain" ]; then NS_DOMAIN=$(cat /etc/slowdns/nsdomain);
 elif [ -f "/root/nsdomain" ]; then NS_DOMAIN=$(cat /root/nsdomain);
 else NS_DOMAIN="Not Set"; fi
+
+# =========================================================
+# BACKUP CONFIGURATION FUNCTIONS
+# =========================================================
+
+function backup_settings() {
+    clear
+    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
+    echo -e "${BICyan} │          ${BIYellow}AUTO-BACKUP CLOUD SETTINGS${BICyan}           │${NC}"
+    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
+    
+    # Check current status
+    STATUS=$(cat /etc/edu_backup_status 2>/dev/null || echo "off")
+    TYPE=$(cat /etc/edu_backup_type 2>/dev/null || echo "none")
+
+    if [[ "$STATUS" == "on" ]]; then
+        STATUS_TEXT="${BIGreen}ON${NC}"
+    else
+        STATUS_TEXT="${BIRed}OFF${NC}"
+    fi
+
+    echo -e "   Current Status: $STATUS_TEXT"
+    echo -e "   Current Method: ${BIWhite}$TYPE${NC}"
+    echo -e "${BICyan} ───────────────────────────────────────────────${NC}"
+    echo -e "   ${BICyan}[1]${NC} Turn Auto-Backup ${BIGreen}ON${NC}"
+    echo -e "   ${BICyan}[2]${NC} Turn Auto-Backup ${BIRed}OFF${NC}"
+    echo -e "   ${BICyan}[3]${NC} Configure Telegram"
+    echo -e "   ${BICyan}[4]${NC} Configure Discord"
+    echo -e ""
+    echo -e "   ${BICyan}[0]${NC} Return to Menu"
+    echo ""
+    read -p "   Select > " b_opt
+
+    case $b_opt in
+        1) echo "on" > /etc/edu_backup_status; echo -e "${BIGreen}Auto-Backup Enabled!${NC}"; sleep 1; backup_settings ;;
+        2) echo "off" > /etc/edu_backup_status; echo -e "${BIRed}Auto-Backup Disabled!${NC}"; sleep 1; backup_settings ;;
+        3) 
+            clear
+            echo -e "${BIYellow}SETUP TELEGRAM${NC}"
+            echo -e "Get Token from @BotFather"
+            read -p "Enter Bot Token: " tg_token
+            echo -e "Get Chat ID from @userinfobot"
+            read -p "Enter Chat ID: " tg_id
+            echo "$tg_token" > /etc/edu_backup_tg_token
+            echo "$tg_id" > /etc/edu_backup_tg_id
+            echo "telegram" > /etc/edu_backup_type
+            echo -e "${BIGreen}Telegram Configured!${NC}"
+            sleep 1; backup_settings ;;
+        4)
+            clear
+            echo -e "${BIYellow}SETUP DISCORD${NC}"
+            echo -e "Create a Webhook in your Discord Channel settings"
+            read -p "Enter Webhook URL: " dc_url
+            echo "$dc_url" > /etc/edu_backup_dc_url
+            echo "discord" > /etc/edu_backup_type
+            echo -e "${BIGreen}Discord Configured!${NC}"
+            sleep 1; backup_settings ;;
+        0) menu ;;
+        *) backup_settings ;;
+    esac
+}
+
+function upload_backup() {
+    # Check if feature is enabled
+    STATUS=$(cat /etc/edu_backup_status 2>/dev/null || echo "off")
+    if [[ "$STATUS" != "on" ]]; then
+        return
+    fi
+
+    TYPE=$(cat /etc/edu_backup_type 2>/dev/null)
+    FILE_PATH="/tmp/vpn_backup.zip"
+    CAPTION="Auto-Backup: $(date '+%Y-%m-%d %H:%M:%S') | IP: $MYIP"
+
+    echo -e "${GRAY}Uploading backup to $TYPE...${NC}"
+
+    if [[ "$TYPE" == "telegram" ]]; then
+        TG_TOKEN=$(cat /etc/edu_backup_tg_token)
+        TG_ID=$(cat /etc/edu_backup_tg_id)
+        if [[ -n "$TG_TOKEN" && -n "$TG_ID" ]]; then
+            curl -s -F document=@"$FILE_PATH" -F caption="$CAPTION" "https://api.telegram.org/bot$TG_TOKEN/sendDocument?chat_id=$TG_ID" > /dev/null
+            echo -e "${BIGreen}Sent to Telegram!${NC}"
+        else
+            echo -e "${BIRed}Telegram config missing!${NC}"
+        fi
+    
+    elif [[ "$TYPE" == "discord" ]]; then
+        DC_URL=$(cat /etc/edu_backup_dc_url)
+        if [[ -n "$DC_URL" ]]; then
+            curl -s -F "file=@$FILE_PATH" -F "content=$CAPTION" "$DC_URL" > /dev/null
+            echo -e "${BIGreen}Sent to Discord!${NC}"
+        else
+            echo -e "${BIRed}Discord config missing!${NC}"
+        fi
+    fi
+}
 
 # =========================================================
 # INTERNAL FUNCTIONS
@@ -48,6 +143,9 @@ function auto_backup() {
     
     # Cleanup
     rm -rf /root/backup_edu
+    
+    # TRIGGER UPLOAD
+    upload_backup
     
     echo -e "${BIGreen}Backup Synced!${NC}"
     sleep 1
@@ -188,11 +286,11 @@ function renew_selector() {
     echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
     echo -e "${BICyan} │           ${BIYellow}RENEW USER ACCOUNT${BICyan}                  │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e "   ${BIWhite}[1]${NC}  Renew SSH / WS Account"
+    echo -e "   ${BICyan}[1]${NC}  Renew SSH / WS Account"
     echo -e "   ${BICyan}───────────────────────────────────────────────${NC}"
-    echo -e "   ${BIWhite}[2]${NC}  Renew VMess Account"
-    echo -e "   ${BIWhite}[3]${NC}  Renew VLESS Account"
-    echo -e "   ${BIWhite}[4]${NC}  Renew Trojan Account"
+    echo -e "   ${BICyan}[2]${NC}  Renew VMess Account"
+    echo -e "   ${BICyan}[3]${NC}  Renew VLESS Account"
+    echo -e "   ${BICyan}[4]${NC}  Renew Trojan Account"
     echo -e ""
     echo -e "   ${BICyan}[0]${NC}  ${BIRed}Cancel${NC}"
     echo ""
@@ -212,9 +310,9 @@ function create_account_selector() {
     echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
     echo -e "${BICyan} │           ${BIYellow}SELECT PROTOCOL TYPE${BICyan}                │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e "   ${BIWhite}[1]${NC}  VMess Account  ${GRAY}(Standard WebSocket)${NC}"
-    echo -e "   ${BIWhite}[2]${NC}  VLESS Account  ${GRAY}(Lightweight/Fast)${NC}"
-    echo -e "   ${BIWhite}[3]${NC}  Trojan Account ${GRAY}(Anti-Detection)${NC}"
+    echo -e "   ${BICyan}[1]${NC}  VMess Account  ${GRAY}(Standard WebSocket)${NC}"
+    echo -e "   ${BICyan}[2]${NC}  VLESS Account  ${GRAY}(Lightweight/Fast)${NC}"
+    echo -e "   ${BICyan}[3]${NC}  Trojan Account ${GRAY}(Anti-Detection)${NC}"
     echo -e ""
     echo -e "   ${BICyan}[0]${NC}  ${BIRed}Cancel${NC}"
     echo ""
@@ -334,7 +432,7 @@ function show_dashboard() {
 
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.5${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.6${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
@@ -373,6 +471,7 @@ function show_menu() {
     echo -e "   ${BICyan}• 16${NC}  Change Domain / Host"
     echo -e "   ${BICyan}• 17${NC}  Change Name Server (NS)"
     echo -e "   ${BICyan}• 18${NC}  Change SSH Banner Message"
+    echo -e "   ${BICyan}• 19${NC}  Auto-Backup Settings ${BIYellow}(NEW)${NC}"
     echo -e ""
     echo -e "   ${BICyan}• 00${NC}  ${BIRed}Exit Dashboard${NC}"
     echo -e ""
@@ -380,7 +479,7 @@ function show_menu() {
     read -p "   Select Option »  " opt
 
     case $opt in
-        01 | 1) clear ; usernew ; auto_backup ;;        # Auto-Backup Triggered here
+        01 | 1) clear ; usernew ; auto_backup ;; 
         02 | 2) clear ; create_account_selector ;;
         03 | 3) clear ; renew_selector ;;
         04 | 4) clear ; cek ;;             
@@ -398,6 +497,7 @@ function show_menu() {
         16 | 16) clear ; change_domain ;;
         17 | 17) clear ; change_ns ;;
         18 | 18) clear ; change_banner ;;
+        19 | 19) clear ; backup_settings ;;
         00 | 0) clear ; exit 0 ;;
         *) show_menu ;;
     esac
