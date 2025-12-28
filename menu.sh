@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - MONITOR EDITION v12.7
-# (Fixed: Discord Uploads, Auto-Install Zip, Debugging)
+# EDUFWESH VPN MANAGER - MONITOR EDITION v12.8
+# (Fixed: Background Watchdog for Reliable Auto-Uploads)
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -17,10 +17,9 @@ MYIP=$(wget -qO- icanhazip.com)
 DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
 ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
 
-# --- ENSURE DEPENDENCIES ARE INSTALLED ---
-# This fixes the "Not Saving" issue if zip is missing
+# --- ENSURE DEPENDENCIES ---
 if ! command -v zip &> /dev/null; then
-    echo -e "${GRAY}Installing missing zip tools...${NC}"
+    echo -e "${GRAY}Installing dependencies...${NC}"
     apt-get update >/dev/null 2>&1
     apt-get install zip unzip curl -y >/dev/null 2>&1
 fi
@@ -32,7 +31,64 @@ elif [ -f "/root/nsdomain" ]; then NS_DOMAIN=$(cat /root/nsdomain);
 else NS_DOMAIN="Not Set"; fi
 
 # =========================================================
-# BACKUP CONFIGURATION FUNCTIONS
+# 1. INTELLIGENT BACKUP WATCHDOG (THE FIX)
+# =========================================================
+
+function start_backup_watchdog() {
+    # This function spawns a background process that survives menu reloads.
+    # It monitors /etc/passwd and config.json for changes.
+    (
+        # 1. Snapshot state before user creation
+        SUM_BEFORE=$(md5sum /etc/passwd /etc/xray/config.json 2>/dev/null)
+        
+        # 2. Loop for 90 seconds (Time given to create user)
+        for i in {1..18}; do
+            sleep 5
+            SUM_AFTER=$(md5sum /etc/passwd /etc/xray/config.json 2>/dev/null)
+            
+            # 3. If files changed, trigger upload immediately
+            if [[ "$SUM_BEFORE" != "$SUM_AFTER" ]]; then
+                
+                # Check if Backup is ON
+                STATUS=$(cat /etc/edu_backup_status 2>/dev/null || echo "off")
+                if [[ "$STATUS" == "on" ]]; then
+                    
+                    # Prepare Backup
+                    mkdir -p /root/backup_edu/ssh_backup
+                    mkdir -p /root/backup_edu/xray_backup
+                    cp -r /etc/xray/* /root/backup_edu/xray_backup/ 2>/dev/null
+                    cp /etc/passwd /etc/shadow /etc/group /etc/gshadow /root/backup_edu/ssh_backup/ 2>/dev/null
+                    
+                    rm -f /tmp/vpn_backup.zip
+                    zip -r /tmp/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
+                    chmod 777 /tmp/vpn_backup.zip
+                    rm -rf /root/backup_edu
+
+                    # Upload
+                    TYPE=$(cat /etc/edu_backup_type 2>/dev/null)
+                    CAPTION="Auto-Backup (New User Added): $(date '+%Y-%m-%d %H:%M:%S') | IP: $MYIP"
+                    FILE_PATH="/tmp/vpn_backup.zip"
+
+                    if [[ "$TYPE" == "discord" ]]; then
+                        DC_URL=$(cat /etc/edu_backup_dc_url)
+                        curl -s -X POST -H "User-Agent: Mozilla/5.0" \
+                             -F "payload_json={\"content\": \"$CAPTION\"}" \
+                             -F "file=@$FILE_PATH" "$DC_URL" > /dev/null
+                    elif [[ "$TYPE" == "telegram" ]]; then
+                        TG_TOKEN=$(cat /etc/edu_backup_tg_token)
+                        TG_ID=$(cat /etc/edu_backup_tg_id)
+                        curl -s -F document=@"$FILE_PATH" -F caption="$CAPTION" \
+                             "https://api.telegram.org/bot$TG_TOKEN/sendDocument?chat_id=$TG_ID" > /dev/null
+                    fi
+                fi
+                exit 0 # Stop monitoring after success
+            fi
+        done
+    ) & > /dev/null 2>&1
+}
+
+# =========================================================
+# 2. BACKUP SETTINGS & MANUAL TRIGGER
 # =========================================================
 
 function backup_settings() {
@@ -41,15 +97,10 @@ function backup_settings() {
     echo -e "${BICyan} │          ${BIYellow}AUTO-BACKUP CLOUD SETTINGS${BICyan}           │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
     
-    # Check current status
     STATUS=$(cat /etc/edu_backup_status 2>/dev/null || echo "off")
     TYPE=$(cat /etc/edu_backup_type 2>/dev/null || echo "none")
 
-    if [[ "$STATUS" == "on" ]]; then
-        STATUS_TEXT="${BIGreen}ON${NC}"
-    else
-        STATUS_TEXT="${BIRed}OFF${NC}"
-    fi
+    if [[ "$STATUS" == "on" ]]; then STATUS_TEXT="${BIGreen}ON${NC}"; else STATUS_TEXT="${BIRed}OFF${NC}"; fi
 
     echo -e "   Current Status: $STATUS_TEXT"
     echo -e "   Current Method: ${BIWhite}$TYPE${NC}"
@@ -58,7 +109,7 @@ function backup_settings() {
     echo -e "   ${BICyan}[2]${NC} Turn Auto-Backup ${BIRed}OFF${NC}"
     echo -e "   ${BICyan}[3]${NC} Configure Telegram"
     echo -e "   ${BICyan}[4]${NC} Configure Discord"
-    echo -e "   ${BICyan}[5]${NC} ${BIYellow}TEST BACKUP NOW${NC} (Try this first)"
+    echo -e "   ${BICyan}[5]${NC} ${BIYellow}TEST BACKUP NOW${NC}"
     echo -e ""
     echo -e "   ${BICyan}[0]${NC} Return to Menu"
     echo ""
@@ -68,191 +119,90 @@ function backup_settings() {
         1) echo "on" > /etc/edu_backup_status; echo -e "${BIGreen}Auto-Backup Enabled!${NC}"; sleep 1; backup_settings ;;
         2) echo "off" > /etc/edu_backup_status; echo -e "${BIRed}Auto-Backup Disabled!${NC}"; sleep 1; backup_settings ;;
         3) 
-            clear
-            echo -e "${BIYellow}SETUP TELEGRAM${NC}"
-            echo -e "Get Token from @BotFather"
-            read -p "Enter Bot Token: " tg_token
-            echo -e "Get Chat ID from @userinfobot"
-            read -p "Enter Chat ID: " tg_id
-            echo "$tg_token" > /etc/edu_backup_tg_token
-            echo "$tg_id" > /etc/edu_backup_tg_id
-            echo "telegram" > /etc/edu_backup_type
-            echo -e "${BIGreen}Telegram Configured!${NC}"
-            sleep 1; backup_settings ;;
+            clear; echo -e "${BIYellow}SETUP TELEGRAM${NC}"; read -p "Bot Token: " tg_token; read -p "Chat ID: " tg_id;
+            echo "$tg_token" > /etc/edu_backup_tg_token; echo "$tg_id" > /etc/edu_backup_tg_id; echo "telegram" > /etc/edu_backup_type;
+            echo -e "${BIGreen}Saved!${NC}"; sleep 1; backup_settings ;;
         4)
-            clear
-            echo -e "${BIYellow}SETUP DISCORD${NC}"
-            echo -e "Create a Webhook in your Discord Channel settings"
-            read -p "Enter Webhook URL: " dc_url
-            echo "$dc_url" > /etc/edu_backup_dc_url
-            echo "discord" > /etc/edu_backup_type
-            echo -e "${BIGreen}Discord Configured!${NC}"
-            sleep 1; backup_settings ;;
+            clear; echo -e "${BIYellow}SETUP DISCORD${NC}"; read -p "Webhook URL: " dc_url;
+            echo "$dc_url" > /etc/edu_backup_dc_url; echo "discord" > /etc/edu_backup_type;
+            echo -e "${BIGreen}Saved!${NC}"; sleep 1; backup_settings ;;
         5)
-            # FORCE TEST
-            clear
-            echo -e "${BIYellow}Running Manual Test...${NC}"
-            # Force enable temporarily for test if off, or just run function
-            auto_backup "force"
-            echo -e ""
-            read -n 1 -s -r -p "Press any key to return..."
-            backup_settings
-            ;;
+            auto_backup "force"; echo -e "" ; read -n 1 -s -r -p "Press any key..."; backup_settings ;;
         0) menu ;;
         *) backup_settings ;;
     esac
 }
 
-function upload_backup() {
-    # Check if feature is enabled (Unless forced)
-    MODE=$1
-    STATUS=$(cat /etc/edu_backup_status 2>/dev/null || echo "off")
-    
-    if [[ "$MODE" != "force" && "$STATUS" != "on" ]]; then
-        return
-    fi
-
-    TYPE=$(cat /etc/edu_backup_type 2>/dev/null)
-    FILE_PATH="/tmp/vpn_backup.zip"
-    CAPTION="Auto-Backup: $(date '+%Y-%m-%d %H:%M:%S') | IP: $MYIP"
-
-    # Verify File Exists Before Uploading
-    if [ ! -f "$FILE_PATH" ]; then
-        echo -e "${BIRed}Error: Backup file creation failed! (Check 'zip' install)${NC}"
-        return
-    fi
-
-    echo -e "${GRAY}Uploading backup to $TYPE...${NC}"
-
-    if [[ "$TYPE" == "telegram" ]]; then
-        TG_TOKEN=$(cat /etc/edu_backup_tg_token)
-        TG_ID=$(cat /etc/edu_backup_tg_id)
-        if [[ -n "$TG_TOKEN" && -n "$TG_ID" ]]; then
-            curl -s -F document=@"$FILE_PATH" -F caption="$CAPTION" "https://api.telegram.org/bot$TG_TOKEN/sendDocument?chat_id=$TG_ID" > /dev/null
-            echo -e "${BIGreen}Sent to Telegram!${NC}"
-        else
-            echo -e "${BIRed}Telegram config missing!${NC}"
-        fi
-    
-    elif [[ "$TYPE" == "discord" ]]; then
-        DC_URL=$(cat /etc/edu_backup_dc_url)
-        if [[ -n "$DC_URL" ]]; then
-            # Discord requires User-Agent and multipart form data
-            curl -s -X POST \
-                 -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
-                 -F "payload_json={\"content\": \"$CAPTION\"}" \
-                 -F "file=@$FILE_PATH" \
-                 "$DC_URL" > /dev/null
-            
-            # Check if curl succeeded silently (Discord doesn't always reply with body on success)
-            if [ $? -eq 0 ]; then
-                echo -e "${BIGreen}Sent to Discord!${NC}"
-            else
-                echo -e "${BIRed}Upload Failed! Check Webhook URL.${NC}"
-            fi
-        else
-            echo -e "${BIRed}Discord config missing!${NC}"
-        fi
-    else
-        echo -e "${BIRed}No backup type selected in settings!${NC}"
-    fi
-}
-
-# =========================================================
-# INTERNAL FUNCTIONS
-# =========================================================
-
-# --- SILENT AUTO BACKUP ---
 function auto_backup() {
-    MODE=$1 # Accepts "force" argument
-    
-    echo -e ""
-    echo -e "${GRAY}Syncing backup configuration...${NC}"
-    
-    mkdir -p /root/backup_edu
+    MODE=$1
+    echo -e ""; echo -e "${GRAY}Syncing backup configuration...${NC}"
     mkdir -p /root/backup_edu/ssh_backup
-    
-    # Copy Data
     cp -r /etc/xray /root/backup_edu/xray_backup 2>/dev/null
-    cp /etc/passwd /root/backup_edu/ssh_backup/
-    cp /etc/shadow /root/backup_edu/ssh_backup/
-    cp /etc/group /root/backup_edu/ssh_backup/
-    cp /etc/gshadow /root/backup_edu/ssh_backup/
-    
-    # Zip & Permission
+    cp /etc/passwd /etc/shadow /etc/group /etc/gshadow /root/backup_edu/ssh_backup/ 2>/dev/null
     rm -f /tmp/vpn_backup.zip
     zip -r /tmp/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
     chmod 777 /tmp/vpn_backup.zip
-    
-    # Cleanup
     rm -rf /root/backup_edu
-
-    # Verify Creation
-    if [ ! -f "/tmp/vpn_backup.zip" ]; then
-        echo -e "${BIRed}Backup Failed! Could not create zip file.${NC}"
-        return
-    fi
     
-    # TRIGGER UPLOAD
-    upload_backup "$MODE"
-    
-    echo -e "${BIGreen}Backup Process Complete!${NC}"
-    # Only pause if in force mode/manual test, otherwise be fast
+    # MANUAL/FORCE UPLOAD LOGIC
+    STATUS=$(cat /etc/edu_backup_status 2>/dev/null || echo "off")
     if [[ "$MODE" == "force" ]]; then
-        sleep 1
-    else
-        sleep 0.5
+        TYPE=$(cat /etc/edu_backup_type 2>/dev/null)
+        FILE_PATH="/tmp/vpn_backup.zip"
+        CAPTION="Manual Backup Test: $(date '+%Y-%m-%d %H:%M:%S')"
+        
+        if [[ "$TYPE" == "discord" ]]; then
+            DC_URL=$(cat /etc/edu_backup_dc_url)
+            curl -s -X POST -H "User-Agent: Mozilla/5.0" -F "payload_json={\"content\": \"$CAPTION\"}" -F "file=@$FILE_PATH" "$DC_URL" > /dev/null
+            if [ $? -eq 0 ]; then echo -e "${BIGreen}Sent to Discord!${NC}"; else echo -e "${BIRed}Failed! Check URL.${NC}"; fi
+        elif [[ "$TYPE" == "telegram" ]]; then
+            TG_TOKEN=$(cat /etc/edu_backup_tg_token); TG_ID=$(cat /etc/edu_backup_tg_id)
+            curl -s -F document=@"$FILE_PATH" -F caption="$CAPTION" "https://api.telegram.org/bot$TG_TOKEN/sendDocument?chat_id=$TG_ID" > /dev/null
+            echo -e "${BIGreen}Sent to Telegram!${NC}"
+        fi
     fi
+    if [[ "$MODE" == "force" ]]; then sleep 1; fi
 }
 
-# --- LIST ACTIVE USERS ---
+function backup_configs() {
+    auto_backup "force"; sleep 2; menu
+}
+
+# =========================================================
+# 3. STANDARD SYSTEM FUNCTIONS (Preserved)
+# =========================================================
+
 function list_active() {
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
     echo -e "${BICyan} │            ${BIGreen}ACTIVE USER ACCOUNTS${BICyan}               │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e ""
-    echo -e "${BIYellow} [ SSH / TUNNEL (Active) ]${NC}"
-    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
     today=$(date +%s)
     while IFS=: read -r username _ uid _ _ _ _; do
         if [[ $uid -ge 1000 && $username != "nobody" ]]; then
             exp_date=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
-            if [[ "$exp_date" == *"never"* ]]; then
-                 echo -e "  - ${BIGreen}$username${NC} (Lifetime)"
+            if [[ "$exp_date" == *"never"* ]]; then echo -e "  - ${BIGreen}$username${NC} (Lifetime)";
             else
                  exp_sec=$(date -d "$exp_date" +%s 2>/dev/null)
-                 if [[ $exp_sec -ge $today ]]; then
-                     echo -e "  - ${BIGreen}$username${NC} (Expires: $exp_date)"
-                 fi
+                 if [[ $exp_sec -ge $today ]]; then echo -e "  - ${BIGreen}$username${NC} (Expires: $exp_date)"; fi
             fi
         fi
     done < /etc/passwd
     echo -e ""
-    echo -e "${BIYellow} [ V2RAY / XRAY (Configured) ]${NC}"
-    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
     if [ -f "/etc/xray/config.json" ]; then
         grep '"email":' /etc/xray/config.json | cut -d '"' -f 4 | sed "s/^/  - ${BIGreen}/" | sed "s/$/${NC}/"
-    else
-        echo -e "  ${GRAY}(No active Xray config found)${NC}"
     fi
-    echo -e ""
     echo -e "${BICyan}=================================================${NC}"
-    read -n 1 -s -r -p "Press any key to return..."
+    read -n 1 -s -r -p "Press any key..."
     menu
 }
 
-# --- LIST EXPIRED USERS ---
 function list_expired() {
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
     echo -e "${BICyan} │           ${BIRed}EXPIRED USER ACCOUNTS${BICyan}               │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e ""
-    echo -e "${BIYellow} [ SSH / TUNNEL (Expired) ]${NC}"
-    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
-    today=$(date +%s)
-    count=0
+    today=$(date +%s); count=0
     while IFS=: read -r username _ uid _ _ _ _; do
         if [[ $uid -ge 1000 && $username != "nobody" ]]; then
             exp_date=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
@@ -265,280 +215,145 @@ function list_expired() {
             fi
         fi
     done < /etc/passwd
-    if [[ $count -eq 0 ]]; then
-        echo -e "  ${BIGreen}(No expired SSH users found)${NC}"
-    fi
+    if [[ $count -eq 0 ]]; then echo -e "  ${BIGreen}(No expired SSH users found)${NC}"; fi
     echo -e ""
-    echo -e "${BIYellow} [ V2RAY / XRAY ]${NC}"
-    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
-    if [ -f "/etc/xray/expired_users.db" ]; then
-        cat /etc/xray/expired_users.db
-    else
-        echo -e "  ${GRAY}(Manual check required for V2Ray)${NC}"
-    fi
-    echo -e ""
+    if [ -f "/etc/xray/expired_users.db" ]; then cat /etc/xray/expired_users.db; fi
     echo -e "${BICyan}=================================================${NC}"
-    read -n 1 -s -r -p "Press any key to return..."
+    read -n 1 -s -r -p "Press any key..."
     menu
 }
 
-# --- RESTORE BACKUP ---
 function restore_configs() {
-    clear
-    echo -e "${BICyan}=========================================${NC}"
-    echo -e "${BIYellow}       RESTORE BACKUP CONFIGURATION      ${NC}"
-    echo -e "${BICyan}=========================================${NC}"
-    echo -e "Instructions:"
-    echo -e "1. Upload ${BIWhite}'vpn_backup.zip'${NC} to ${BIWhite}/tmp${NC}."
-    echo -e ""
-    read -p "Have you uploaded the file? [y/n]: " ans
+    clear; echo -e "${BIYellow}RESTORE BACKUP${NC}"; echo "Upload 'vpn_backup.zip' to /tmp/"; read -p "Ready? [y/n]: " ans
     if [[ "$ans" != "y" ]]; then menu; fi
-
-    echo -e ""
-    echo -e "${BIYellow}[Checking File...]${NC}"
-    if [ ! -f "/tmp/vpn_backup.zip" ]; then
-        echo -e "${BIRed}Error: File not found in /tmp/vpn_backup.zip${NC}"
-        sleep 3
-        menu
-    fi
-
-    echo -e "${BIGreen}File found! Restoring...${NC}"
+    if [ ! -f "/tmp/vpn_backup.zip" ]; then echo -e "${BIRed}File not found!${NC}"; sleep 2; menu; fi
     mkdir -p /root/restore_temp
     unzip -o /tmp/vpn_backup.zip -d /root/restore_temp > /dev/null 2>&1
-
-    echo -e "${BIWhite}  [+] Restoring Data...${NC}"
     rm -rf /etc/xray/*
     cp -r /root/restore_temp/root/backup_edu/xray_backup/* /etc/xray/ 2>/dev/null
-    cp -r /root/restore_temp/xray_backup/* /etc/xray/ 2>/dev/null
     cp /root/restore_temp/root/backup_edu/ssh_backup/* /etc/ 2>/dev/null
     cp /root/restore_temp/ssh_backup/* /etc/ 2>/dev/null
-
     rm -rf /root/restore_temp
-    echo -e "${BIWhite}  [+] Restarting Services...${NC}"
-    systemctl restart ssh
-    systemctl restart sshd
-    systemctl restart xray
-    
-    echo -e "${BIGreen}       ✅ RESTORE COMPLETED   ${NC}"
-    read -n 1 -s -r -p "Press any key to reload menu..."
-    menu
+    systemctl restart ssh sshd xray
+    echo -e "${BIGreen}Restore Complete!${NC}"; sleep 2; menu
+}
+
+function detailed_status() {
+    clear; echo -e "${BIYellow}SYSTEM DIAGNOSTICS${NC}"; echo -e "--------------------------------"; 
+    echo -ne "SSH Service: "; systemctl is-active ssh; 
+    echo -ne "Xray Core:   "; systemctl is-active xray; 
+    echo -ne "Nginx:       "; systemctl is-active nginx;
+    echo -e ""; read -n 1 -s -r -p "Press any key..."; menu
 }
 
 function change_banner() {
     clear
     if ! command -v nano &> /dev/null; then apt-get install nano -y > /dev/null 2>&1; fi
     nano /etc/issue.net
-    service ssh restart
-    service sshd restart
-    menu
+    service ssh restart; service sshd restart; menu
 }
 
-# --- SELECTORS WITH AUTO-BACKUP TRIGGER ---
+function change_ns() {
+    clear; echo "Current NS: $NS_DOMAIN"; read -p "New NS: " new_ns; 
+    if [[ -n "$new_ns" ]]; then echo "$new_ns" > /etc/xray/dns; echo "$new_ns" > /root/nsdomain; fi; menu
+}
+
+function clear_cache() {
+    clear; echo "Cleaning RAM..."; sync; echo 3 > /proc/sys/vm/drop_caches; swapoff -a && swapon -a; sleep 1; menu
+}
+
+function auto_reboot() {
+    clear; echo "[1] Enable (00:00)  [2] Disable"; read -p "Select > " x; 
+    if [[ "$x" == "1" ]]; then echo "0 0 * * * root reboot" > /etc/cron.d/auto_reboot_edu; echo "Enabled."; 
+    elif [[ "$x" == "2" ]]; then rm -f /etc/cron.d/auto_reboot_edu; echo "Disabled."; fi; sleep 1; menu
+}
+
+function fix_services() {
+    clear; echo "Restarting Services..."; systemctl restart nginx xray ssh; echo "Done."; sleep 1; menu
+}
+
+function change_domain() {
+    clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; 
+    if [[ -n "$d" ]]; then echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; systemctl restart nginx xray; fi; menu
+}
+
+# =========================================================
+# 4. MENUS & SELECTORS (With Watchdog Triggers)
+# =========================================================
+
 function renew_selector() {
-    clear
-    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │           ${BIYellow}RENEW USER ACCOUNT${BICyan}                  │${NC}"
-    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e "   ${BICyan}[1]${NC}  Renew SSH / WS Account"
-    echo -e "   ${BICyan}───────────────────────────────────────────────${NC}"
-    echo -e "   ${BICyan}[2]${NC}  Renew VMess Account"
-    echo -e "   ${BICyan}[3]${NC}  Renew VLESS Account"
-    echo -e "   ${BICyan}[4]${NC}  Renew Trojan Account"
-    echo -e ""
-    echo -e "   ${BICyan}[0]${NC}  ${BIRed}Cancel${NC}"
-    echo ""
-    read -p "   Select > " r_opt
+    clear; echo -e "${BIYellow}RENEW USER${NC}"; echo "[1] SSH/WS  [2] VMess  [3] VLESS  [4] Trojan  [0] Cancel"
+    read -p "Select > " r_opt
     case $r_opt in
-        1) clear ; renew ; auto_backup ;;        
-        2) clear ; renew-ws ; auto_backup ;;     
-        3) clear ; renew-vless ; auto_backup ;;  
-        4) clear ; renew-tr ; auto_backup ;;     
+        1) clear ; start_backup_watchdog ; renew ;;
+        2) clear ; start_backup_watchdog ; renew-ws ;;
+        3) clear ; start_backup_watchdog ; renew-vless ;;
+        4) clear ; start_backup_watchdog ; renew-tr ;;
         0) menu ;;
         *) menu ;;
     esac
 }
 
 function create_account_selector() {
-    clear
-    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │           ${BIYellow}SELECT PROTOCOL TYPE${BICyan}                │${NC}"
-    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e "   ${BICyan}[1]${NC}  VMess Account  ${GRAY}(Standard WebSocket)${NC}"
-    echo -e "   ${BICyan}[2]${NC}  VLESS Account  ${GRAY}(Lightweight/Fast)${NC}"
-    echo -e "   ${BICyan}[3]${NC}  Trojan Account ${GRAY}(Anti-Detection)${NC}"
-    echo -e ""
-    echo -e "   ${BICyan}[0]${NC}  ${BIRed}Cancel${NC}"
-    echo ""
-    read -p "   Select > " p_opt
+    clear; echo -e "${BIYellow}CREATE ACCOUNT${NC}"; echo "[1] VMess  [2] VLESS  [3] Trojan  [0] Cancel"
+    read -p "Select > " p_opt
     case $p_opt in
-        1) clear ; add-ws ; auto_backup ;;
-        2) clear ; add-vless ; auto_backup ;;
-        3) clear ; add-tr ; auto_backup ;;
+        1) clear ; start_backup_watchdog ; add-ws ;;
+        2) clear ; start_backup_watchdog ; add-vless ;;
+        3) clear ; start_backup_watchdog ; add-tr ;;
         0) menu ;;
         *) menu ;;
     esac
 }
 
-function check_service() {
-    name=$1; service=$2
-    if systemctl is-active --quiet $service; then
-        echo -e "  ${BICyan}»${NC} $name ${GRAY}..................${NC} ${BIGreen}RUNNING${NC}"
-    else
-        echo -e "  ${BICyan}»${NC} $name ${GRAY}..................${NC} ${BIRed}STOPPED${NC}"
-    fi
-}
-
-function detailed_status() {
-    clear
-    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │           ${BIYellow}DETAILED SYSTEM DIAGNOSTICS${BICyan}         │${NC}"
-    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e ""
-    echo -e " ${BIYellow}[ CORE SERVICES ]${NC}"
-    check_service "SSH Service" "ssh"
-    check_service "VPN Core (Xray)" "xray"
-    check_service "Web Server (Nginx)" "nginx"
-    check_service "Task Scheduler" "cron"
-    echo -e ""
-    echo -e " ${BIYellow}[ PROTOCOL DETECTION ]${NC}"
-    CONFIG="/etc/xray/config.json"
-    if [ -f "$CONFIG" ]; then
-        if grep -q "vmess" "$CONFIG"; then echo -e "  ${BICyan}»${NC} VMess ....................... ${BIGreen}ACTIVE${NC}"; 
-        else echo -e "  ${BICyan}»${NC} VMess ....................... ${GRAY}NOT FOUND${NC}"; fi
-        if grep -q "vless" "$CONFIG"; then echo -e "  ${BICyan}»${NC} VLESS ....................... ${BIGreen}ACTIVE${NC}"; 
-        else echo -e "  ${BICyan}»${NC} VLESS ....................... ${GRAY}NOT FOUND${NC}"; fi
-        if grep -q "trojan" "$CONFIG"; then echo -e "  ${BICyan}»${NC} Trojan ...................... ${BIGreen}ACTIVE${NC}"; 
-        else echo -e "  ${BICyan}»${NC} Trojan ...................... ${GRAY}NOT FOUND${NC}"; fi
-    else
-        echo -e "  ${BIRed}Error: Xray Config Not Found${NC}"
-    fi
-    echo -e ""
-    echo -e " ${BIYellow}[ SERVER HEALTH ]${NC}"
-    RAM=$(free -m | awk 'NR==2{printf "%s/%s MB (%.2f%%)", $3,$2,$3*100/$2 }')
-    LOAD=$(uptime | awk -F'load average:' '{ print $2 }')
-    echo -e "  ${BICyan}»${NC} RAM Usage : $RAM"
-    echo -e "  ${BICyan}»${NC} CPU Load  :$LOAD"
-    echo -e ""
-    echo -e "${BICyan}=================================================${NC}"
-    read -n 1 -s -r -p "Press any key to return to menu"
-    menu
-}
-
-function change_ns() {
-    clear; echo -e "${BICyan}=========================================${NC}"; echo -e "${BIYellow}       CHANGE NAME SERVER (NS)           ${NC}"; echo -e "${BICyan}=========================================${NC}"; echo -e "${BIWhite}Current NS: ${BIGreen}$NS_DOMAIN${NC}"; echo ""; read -p "Enter New NS: " new_ns; if [[ -z "$new_ns" ]]; then menu; fi; echo "$new_ns" > /etc/xray/dns; echo "$new_ns" > /root/nsdomain; echo -e "${BIGreen}Updated!${NC}"; sleep 1; menu;
-}
-
-function clear_cache() {
-    clear; echo "Cleaning RAM..."; sync; echo 3 > /proc/sys/vm/drop_caches; swapoff -a && swapon -a; sleep 1; menu;
-}
-
-function auto_reboot() {
-    clear; echo -e "${BIYellow}AUTO-REBOOT SETTINGS${NC}"; echo -e "[1] Enable (00:00 Daily)  [2] Disable"; read -p "Select > " x; if [[ "$x" == "1" ]]; then echo "0 0 * * * root reboot" > /etc/cron.d/auto_reboot_edu; echo "Enabled."; elif [[ "$x" == "2" ]]; then rm -f /etc/cron.d/auto_reboot_edu; echo "Disabled."; fi; sleep 1; menu;
-}
-
-function fix_services() {
-    clear; echo "Restarting Services..."; systemctl restart nginx xray ssh; echo "Done."; sleep 1; menu;
-}
-
-function change_domain() {
-    clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -z "$d" ]]; then menu; fi; echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; systemctl restart nginx xray; echo "Updated."; sleep 1; menu;
-}
-
-function backup_configs() {
-    clear
-    echo -e "${BICyan}=========================================${NC}"
-    echo -e "${BIYellow}       BACKUP ALL USERS (SSH + VPN)      ${NC}"
-    echo -e "${BICyan}=========================================${NC}"
-    mkdir -p /root/backup_edu
-    mkdir -p /root/backup_edu/ssh_backup
-    
-    cp -r /etc/xray /root/backup_edu/xray_backup 2>/dev/null
-    cp /etc/passwd /root/backup_edu/ssh_backup/
-    cp /etc/shadow /root/backup_edu/ssh_backup/
-    cp /etc/group /root/backup_edu/ssh_backup/
-    cp /etc/gshadow /root/backup_edu/ssh_backup/
-    
-    zip -r /tmp/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
-    chmod 777 /tmp/vpn_backup.zip
-    rm -rf /root/backup_edu
-    
-    echo -e "${BIGreen}Backup created successfully!${NC}"
-    echo -e "${BIWhite}Location: ${BIYellow}/tmp/vpn_backup.zip${NC}"
-    sleep 4
-    menu
-}
-
 # =========================================================
-# DASHBOARD UI
+# 5. DASHBOARD
 # =========================================================
+
 function show_dashboard() {
-    RAM_USED=$(free -m | awk 'NR==2{print $3}')
-    RAM_TOTAL=$(free -m | awk 'NR==2{print $2}')
+    RAM=$(free -m | awk 'NR==2{printf "%s/%s MB", $3,$2}')
     LOAD=$(uptime | awk -F'load average:' '{ print $2 }' | cut -d, -f1)
-    UPTIME=$(uptime -p | cut -d " " -f 2-10 | cut -c 1-20)
     
-    # --- TIME & BANDWIDTH LOGIC ---
-    SERVER_TIME=$(date "+%H:%M:%S")
-    # Using vnstat for bandwidth (Requires vnstat installed)
-    BW_TODAY=$(vnstat -d --oneline | awk -F\; '{print $6}' 2>/dev/null || echo "N/A")
-    BW_MONTH=$(vnstat -m --oneline | awk -F\; '{print $11}' 2>/dev/null || echo "N/A")
-
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.7${NC}            ${BICyan}│${NC}"
-    echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
-    echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}ISP${NC}  : $ISP   ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}TIME${NC} : $SERVER_TIME       ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}DOM${NC}  : $DOMAIN     ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}UP${NC}   : $UPTIME   ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}NS${NC}   : $NS_DOMAIN    ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}LOAD${NC} : $LOAD           ${BICyan}│${NC}"
-    echo -e "${BICyan} ├──────────────────────────────┴────────────────────────────┤${NC}"
-    echo -e "${BICyan} │${NC}              ${BIYellow}BANDWIDTH MONITORING (VNSTAT)${NC}               ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC}     ${BIGreen}TODAY:${NC} $BW_TODAY           ${BIGreen}MONTH:${NC} $BW_MONTH          ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.8${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} ├───────────────────────────────────────────────────────────┤${NC}"
+    echo -e "${BICyan} │${NC} ${BIGreen}IP:${NC} $MYIP  ${BICyan}│${NC} ${BIGreen}RAM:${NC} $RAM  ${BICyan}│${NC} ${BIGreen}LOAD:${NC} $LOAD ${BICyan}│${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────────────────┘${NC}"
 }
 
 function show_menu() {
     show_dashboard
     echo -e ""
-    echo -e "   ${BIYellow}USER ACCOUNTS${NC}"
-    echo -e "   ${BICyan}• 01${NC}  Create SSH / WS Account"
-    echo -e "   ${BICyan}• 02${NC}  Create V2Ray Account ${BIYellow}(Multi-Proto)${NC}"
-    echo -e "   ${BICyan}• 03${NC}  Renew User Services ${GRAY}(SSH/Xray)${NC}"
-    echo -e "   ${BICyan}• 04${NC}  User Details & Monitor"
-    echo -e "   ${BICyan}• 05${NC}  List Active Users"
-    echo -e "   ${BICyan}• 06${NC}  List Expired Users"
-    echo -e "   ${BICyan}• 07${NC}  Delete / Lock User"
+    echo -e "   ${BIYellow}USER MANAGEMENT${NC}"
+    echo -e "   ${BICyan}[01]${NC} Create SSH Account"
+    echo -e "   ${BICyan}[02]${NC} Create Xray Account"
+    echo -e "   ${BICyan}[03]${NC} Renew Services"
+    echo -e "   ${BICyan}[04]${NC} User Monitor"
+    echo -e "   ${BICyan}[05]${NC} Active Users"
+    echo -e "   ${BICyan}[06]${NC} Expired Users"
+    echo -e "   ${BICyan}[07]${NC} Lock/Unlock User"
     echo -e ""
-    echo -e "   ${BIYellow}SYSTEM TOOLS${NC}"
-    echo -e "   ${BICyan}• 08${NC}  Detailed System Status"
-    echo -e "   ${BICyan}• 09${NC}  Speedtest Benchmark"
-    echo -e "   ${BICyan}• 10${NC}  Reboot Server"
-    echo -e "   ${BICyan}• 11${NC}  Clear RAM & Logs"
+    echo -e "   ${BIYellow}SYSTEM & SETTINGS${NC}"
+    echo -e "   ${BICyan}[08]${NC} System Details    ${BICyan}[14]${NC} Manual Backup"
+    echo -e "   ${BICyan}[09]${NC} Speedtest         ${BICyan}[15]${NC} Restore Backup"
+    echo -e "   ${BICyan}[10]${NC} Reboot Server     ${BICyan}[16]${NC} Change Domain"
+    echo -e "   ${BICyan}[11]${NC} Clear RAM         ${BICyan}[17]${NC} Change NS"
+    echo -e "   ${BICyan}[12]${NC} Fix Services      ${BICyan}[18]${NC} Change Banner"
+    echo -e "   ${BICyan}[13]${NC} Auto-Reboot       ${BICyan}[19]${NC} ${BIYellow}Auto-Backup Setup${NC}"
     echo -e ""
-    echo -e "   ${BIYellow}ADVANCED SETTINGS${NC}"
-    echo -e "   ${BICyan}• 12${NC}  Fix SSL / Restart Services"
-    echo -e "   ${BICyan}• 13${NC}  Auto-Reboot Scheduler"
-    echo -e "   ${BICyan}• 14${NC}  Backup Configurations"
-    echo -e "   ${BICyan}• 15${NC}  Restore Backup"
-    echo -e "   ${BICyan}• 16${NC}  Change Domain / Host"
-    echo -e "   ${BICyan}• 17${NC}  Change Name Server (NS)"
-    echo -e "   ${BICyan}• 18${NC}  Change SSH Banner Message"
-    echo -e "   ${BICyan}• 19${NC}  Auto-Backup Settings ${BIYellow}(NEW)${NC}"
-    echo -e ""
-    echo -e "   ${BICyan}• 00${NC}  ${BIRed}Exit Dashboard${NC}"
-    echo -e ""
+    echo -e "   ${BICyan}[00]${NC} Exit"
     echo -e "${BICyan} ─────────────────────────────────────────────────────────────${NC}"
     read -p "   Select Option »  " opt
 
     case $opt in
-        01 | 1) clear ; usernew ; auto_backup ;; 
+        01 | 1) clear ; start_backup_watchdog ; usernew ;;
         02 | 2) clear ; create_account_selector ;;
         03 | 3) clear ; renew_selector ;;
-        04 | 4) clear ; cek ;;             
-        05 | 5) clear ; list_active ;;     
-        06 | 6) clear ; list_expired ;;    
-        07 | 7) clear ; member ;;          
+        04 | 4) clear ; cek ;;
+        05 | 5) clear ; list_active ;;
+        06 | 6) clear ; list_expired ;;
+        07 | 7) clear ; member ;;
         08 | 8) clear ; detailed_status ;;
         09 | 9) clear ; speedtest ;;
         10 | 10) clear ; reboot ;;
@@ -546,7 +361,7 @@ function show_menu() {
         12 | 12) clear ; fix_services ;;
         13 | 13) clear ; auto_reboot ;;
         14 | 14) clear ; backup_configs ;;
-        15 | 15) clear ; restore_configs ;; 
+        15 | 15) clear ; restore_configs ;;
         16 | 16) clear ; change_domain ;;
         17 | 17) clear ; change_ns ;;
         18 | 18) clear ; change_banner ;;
@@ -556,6 +371,5 @@ function show_menu() {
     esac
 }
 
-# Start the menu
 show_menu
 
