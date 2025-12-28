@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - PUBLIC BACKUP EDITION v12.1
+# EDUFWESH VPN MANAGER - MONITOR EDITION v12.3
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -26,27 +26,153 @@ else NS_DOMAIN="Not Set"; fi
 # INTERNAL FUNCTIONS
 # =========================================================
 
+# --- FUNCTION: LIST ACTIVE USERS ---
+function list_active() {
+    clear
+    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
+    echo -e "${BICyan} │            ${BIGreen}ACTIVE USER ACCOUNTS${BICyan}               │${NC}"
+    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
+    echo -e ""
+    
+    echo -e "${BIYellow} [ SSH / TUNNEL (Active) ]${NC}"
+    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
+    
+    today=$(date +%s)
+    # Loop through system users >= UID 1000
+    while IFS=: read -r username _ uid _ _ _ _; do
+        if [[ $uid -ge 1000 && $username != "nobody" ]]; then
+            # Check expiration date
+            exp_date=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
+            if [[ "$exp_date" == *"never"* ]]; then
+                 echo -e "  - ${BIGreen}$username${NC} (Lifetime)"
+            else
+                 exp_sec=$(date -d "$exp_date" +%s 2>/dev/null)
+                 if [[ $exp_sec -ge $today ]]; then
+                     echo -e "  - ${BIGreen}$username${NC} (Expires: $exp_date)"
+                 fi
+            fi
+        fi
+    done < /etc/passwd
+    echo -e ""
+
+    echo -e "${BIYellow} [ V2RAY / XRAY (Configured) ]${NC}"
+    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
+    if [ -f "/etc/xray/config.json" ]; then
+        grep '"email":' /etc/xray/config.json | cut -d '"' -f 4 | sed "s/^/  - ${BIGreen}/" | sed "s/$/${NC}/"
+    else
+        echo -e "  ${GRAY}(No active Xray config found)${NC}"
+    fi
+    
+    echo -e ""
+    echo -e "${BICyan}=================================================${NC}"
+    read -n 1 -s -r -p "Press any key to return..."
+    menu
+}
+
+# --- FUNCTION: LIST EXPIRED USERS ---
+function list_expired() {
+    clear
+    echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
+    echo -e "${BICyan} │           ${BIRed}EXPIRED USER ACCOUNTS${BICyan}               │${NC}"
+    echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
+    echo -e ""
+    
+    echo -e "${BIYellow} [ SSH / TUNNEL (Expired) ]${NC}"
+    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
+    
+    today=$(date +%s)
+    count=0
+    while IFS=: read -r username _ uid _ _ _ _; do
+        if [[ $uid -ge 1000 && $username != "nobody" ]]; then
+            exp_date=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
+            if [[ "$exp_date" != *"never"* ]]; then
+                 exp_sec=$(date -d "$exp_date" +%s 2>/dev/null)
+                 # If expiration date is LESS than today, it is expired
+                 if [[ $exp_sec -lt $today && -n "$exp_sec" ]]; then
+                     echo -e "  - ${BIRed}$username${NC} (Expired: $exp_date)"
+                     ((count++))
+                 fi
+            fi
+        fi
+    done < /etc/passwd
+    
+    if [[ $count -eq 0 ]]; then
+        echo -e "  ${BIGreen}(No expired SSH users found)${NC}"
+    fi
+    echo -e ""
+
+    echo -e "${BIYellow} [ V2RAY / XRAY ]${NC}"
+    echo -e "${BIWhite} ───────────────────────────────────────────────${NC}"
+    # Note: V2Ray expiration is harder to track without a separate DB.
+    # Typically we check if they are disabled in config, or use a side-file.
+    if [ -f "/etc/xray/expired_users.db" ]; then
+        cat /etc/xray/expired_users.db
+    else
+        echo -e "  ${GRAY}(Manual check required for V2Ray)${NC}"
+    fi
+
+    echo -e ""
+    echo -e "${BICyan}=================================================${NC}"
+    read -n 1 -s -r -p "Press any key to return..."
+    menu
+}
+
+# --- RESTORE BACKUP ---
+function restore_configs() {
+    clear
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "${BIYellow}       RESTORE BACKUP CONFIGURATION      ${NC}"
+    echo -e "${BICyan}=========================================${NC}"
+    echo -e "Instructions:"
+    echo -e "1. Open your SFTP App (Termius/MT Manager)."
+    echo -e "2. Upload ${BIWhite}'vpn_backup.zip'${NC} to the ${BIWhite}/tmp${NC} folder."
+    echo -e ""
+    read -p "Have you uploaded the file to /tmp? [y/n]: " ans
+    if [[ "$ans" != "y" ]]; then menu; fi
+
+    echo -e ""
+    echo -e "${BIYellow}[Checking File...]${NC}"
+    if [ ! -f "/tmp/vpn_backup.zip" ]; then
+        echo -e "${BIRed}Error: File not found in /tmp/vpn_backup.zip${NC}"
+        sleep 3
+        menu
+    fi
+
+    echo -e "${BIGreen}File found! Starting Restore...${NC}"
+    mkdir -p /root/restore_temp
+    unzip -o /tmp/vpn_backup.zip -d /root/restore_temp > /dev/null 2>&1
+
+    # Restore Xray
+    echo -e "${BIWhite}  [+] Restoring V2Ray Nodes...${NC}"
+    rm -rf /etc/xray/*
+    cp -r /root/restore_temp/root/backup_edu/xray_backup/* /etc/xray/ 2>/dev/null
+    cp -r /root/restore_temp/xray_backup/* /etc/xray/ 2>/dev/null
+
+    # Restore SSH Users
+    echo -e "${BIWhite}  [+] Restoring SSH Users & Passwords...${NC}"
+    cp /root/restore_temp/root/backup_edu/ssh_backup/* /etc/ 2>/dev/null
+    cp /root/restore_temp/ssh_backup/* /etc/ 2>/dev/null
+
+    rm -rf /root/restore_temp
+    echo -e "${BIWhite}  [+] Restarting Services...${NC}"
+    systemctl restart ssh
+    systemctl restart sshd
+    systemctl restart xray
+    
+    echo -e "${BIGreen}       ✅ RESTORE COMPLETED SUCCESSFULY   ${NC}"
+    read -n 1 -s -r -p "Press any key to reload menu..."
+    menu
+}
+
 function change_banner() {
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────┐${NC}"
     echo -e "${BICyan} │          ${BIYellow}EDIT SSH CONNECTION BANNER${BICyan}           │${NC}"
     echo -e "${BICyan} └───────────────────────────────────────────────┘${NC}"
-    echo -e " ${BIWhite}This message appears when users connect via SSH/VPN.${NC}"
-    echo -e ""
-    echo -e " ${BIYellow}INSTRUCTIONS:${NC}"
-    echo -e " 1. The editor will open automatically."
-    echo -e " 2. Type or paste your new message."
-    echo -e " 3. Press ${BIWhite}Ctrl + X${NC}, then ${BIWhite}Y${NC}, then ${BIWhite}Enter${NC} to save."
-    echo -e ""
-    read -n 1 -s -r -p " Press any key to open editor..."
     if ! command -v nano &> /dev/null; then apt-get install nano -y > /dev/null 2>&1; fi
     nano /etc/issue.net
-    echo -e ""
-    echo -e "${BIWhite}Restarting SSH Service to apply changes...${NC}"
     service ssh restart
     service sshd restart
-    echo -e "${BIGreen}Success! New banner is active.${NC}"
-    sleep 2
     menu
 }
 
@@ -162,35 +288,22 @@ function change_domain() {
     clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -z "$d" ]]; then menu; fi; echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; systemctl restart nginx xray; echo "Updated."; sleep 1; menu;
 }
 
-# --- UPDATED BACKUP FUNCTION (STORES IN /TMP) ---
 function backup_configs() {
     clear
     echo -e "${BICyan}=========================================${NC}"
     echo -e "${BIYellow}       BACKUP ALL USERS (SSH + VPN)      ${NC}"
     echo -e "${BICyan}=========================================${NC}"
-    echo -e "Gathering files..."
-    
-    # 1. Prepare temp folder
     mkdir -p /root/backup_edu
     mkdir -p /root/backup_edu/ssh_backup
     
-    # 2. Copy Xray Data
     cp -r /etc/xray /root/backup_edu/xray_backup 2>/dev/null
-    
-    # 3. Copy SSH User Data
     cp /etc/passwd /root/backup_edu/ssh_backup/
     cp /etc/shadow /root/backup_edu/ssh_backup/
     cp /etc/group /root/backup_edu/ssh_backup/
     cp /etc/gshadow /root/backup_edu/ssh_backup/
     
-    # 4. ZIP IT TO /TMP (Public Access)
-    # We save it to /tmp/vpn_backup.zip instead of /root/
     zip -r /tmp/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
-    
-    # 5. UNLOCK PERMISSIONS (Crucial Step)
     chmod 777 /tmp/vpn_backup.zip
-    
-    # 6. Cleanup
     rm -rf /root/backup_edu
     
     echo -e "${BIGreen}Backup created successfully!${NC}"
@@ -211,7 +324,7 @@ function show_dashboard() {
     
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.1${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.3${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
@@ -229,21 +342,24 @@ function show_menu() {
     echo -e "   ${BICyan}• 02${NC}  Create V2Ray Account ${BIYellow}(Multi-Proto)${NC}"
     echo -e "   ${BICyan}• 03${NC}  Renew User Services ${GRAY}(SSH/Xray)${NC}"
     echo -e "   ${BICyan}• 04${NC}  User Details & Monitor"
-    echo -e "   ${BICyan}• 05${NC}  Delete / Lock User"
+    echo -e "   ${BICyan}• 05${NC}  List Active Users ${BIGreen}(NEW)${NC}"
+    echo -e "   ${BICyan}• 06${NC}  List Expired Users ${BIRed}(NEW)${NC}"
+    echo -e "   ${BICyan}• 07${NC}  Delete / Lock User"
     echo -e ""
     echo -e "   ${BIYellow}SYSTEM TOOLS${NC}"
-    echo -e "   ${BICyan}• 06${NC}  Detailed System Status"
-    echo -e "   ${BICyan}• 07${NC}  Speedtest Benchmark"
-    echo -e "   ${BICyan}• 08${NC}  Reboot Server"
-    echo -e "   ${BICyan}• 09${NC}  Clear RAM & Logs"
+    echo -e "   ${BICyan}• 08${NC}  Detailed System Status"
+    echo -e "   ${BICyan}• 09${NC}  Speedtest Benchmark"
+    echo -e "   ${BICyan}• 10${NC}  Reboot Server"
+    echo -e "   ${BICyan}• 11${NC}  Clear RAM & Logs"
     echo -e ""
     echo -e "   ${BIYellow}ADVANCED SETTINGS${NC}"
-    echo -e "   ${BICyan}• 10${NC}  Fix SSL / Restart Services"
-    echo -e "   ${BICyan}• 11${NC}  Auto-Reboot Scheduler"
-    echo -e "   ${BICyan}• 12${NC}  Backup Configurations"
-    echo -e "   ${BICyan}• 13${NC}  Change Domain / Host"
-    echo -e "   ${BICyan}• 14${NC}  Change Name Server (NS)"
-    echo -e "   ${BICyan}• 15${NC}  Change SSH Banner Message"
+    echo -e "   ${BICyan}• 12${NC}  Fix SSL / Restart Services"
+    echo -e "   ${BICyan}• 13${NC}  Auto-Reboot Scheduler"
+    echo -e "   ${BICyan}• 14${NC}  Backup Configurations"
+    echo -e "   ${BICyan}• 15${NC}  Restore Backup ${BIGreen}(NEW)${NC}"
+    echo -e "   ${BICyan}• 16${NC}  Change Domain / Host"
+    echo -e "   ${BICyan}• 17${NC}  Change Name Server (NS)"
+    echo -e "   ${BICyan}• 18${NC}  Change SSH Banner Message"
     echo -e ""
     echo -e "   ${BICyan}• 00${NC}  ${BIRed}Exit Dashboard${NC}"
     echo -e ""
@@ -255,17 +371,20 @@ function show_menu() {
         02 | 2) clear ; create_account_selector ;;
         03 | 3) clear ; renew_selector ;;
         04 | 4) clear ; cek ;;             
-        05 | 5) clear ; member ;;          
-        06 | 6) clear ; detailed_status ;;
-        07 | 7) clear ; speedtest ;;
-        08 | 8) clear ; reboot ;;
-        09 | 9) clear ; clear_cache ;;
-        10 | 10) clear ; fix_services ;;
-        11 | 11) clear ; auto_reboot ;;
-        12 | 12) clear ; backup_configs ;;
-        13 | 13) clear ; change_domain ;;
-        14 | 14) clear ; change_ns ;;
-        15 | 15) clear ; change_banner ;;
+        05 | 5) clear ; list_active ;;     
+        06 | 6) clear ; list_expired ;;    
+        07 | 7) clear ; member ;;          
+        08 | 8) clear ; detailed_status ;;
+        09 | 9) clear ; speedtest ;;
+        10 | 10) clear ; reboot ;;
+        11 | 11) clear ; clear_cache ;;
+        12 | 12) clear ; fix_services ;;
+        13 | 13) clear ; auto_reboot ;;
+        14 | 14) clear ; backup_configs ;;
+        15 | 15) clear ; restore_configs ;; 
+        16 | 16) clear ; change_domain ;;
+        17 | 17) clear ; change_ns ;;
+        18 | 18) clear ; change_banner ;;
         00 | 0) clear ; exit 0 ;;
         *) show_menu ;;
     esac
