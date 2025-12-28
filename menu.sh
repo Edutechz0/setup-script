@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - AUTO-BACKUP EDITION v12.4
+# EDUFWESH VPN MANAGER - MONITOR EDITION v12.5
+# (Added: Bandwidth Monitor, Time Display, Cleaned Menu)
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -26,7 +27,7 @@ else NS_DOMAIN="Not Set"; fi
 # INTERNAL FUNCTIONS
 # =========================================================
 
-# --- NEW: SILENT AUTO BACKUP ---
+# --- SILENT AUTO BACKUP ---
 function auto_backup() {
     echo -e ""
     echo -e "${GRAY}Auto-updating backup configuration...${NC}"
@@ -292,7 +293,6 @@ function change_domain() {
     clear; echo "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -z "$d" ]]; then menu; fi; echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; systemctl restart nginx xray; echo "Updated."; sleep 1; menu;
 }
 
-# --- MANUAL BACKUP (FOR MENU OPTION) ---
 function backup_configs() {
     clear
     echo -e "${BICyan}=========================================${NC}"
@@ -326,16 +326,25 @@ function show_dashboard() {
     LOAD=$(uptime | awk -F'load average:' '{ print $2 }' | cut -d, -f1)
     UPTIME=$(uptime -p | cut -d " " -f 2-10 | cut -c 1-20)
     
+    # --- TIME & BANDWIDTH LOGIC ---
+    SERVER_TIME=$(date "+%H:%M:%S")
+    # Using vnstat for bandwidth (Requires vnstat installed)
+    BW_TODAY=$(vnstat -d --oneline | awk -F\; '{print $6}' 2>/dev/null || echo "N/A")
+    BW_MONTH=$(vnstat -m --oneline | awk -F\; '{print $11}' 2>/dev/null || echo "N/A")
+
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.4${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.5${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}ISP${NC}  : $ISP   ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}LOAD${NC} : $LOAD           ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}DOM${NC}  : $DOMAIN     ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}TIME${NC} : $UPTIME   ${BICyan}│${NC}"
-    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}NS${NC}   : $NS_DOMAIN    ${BICyan}│${NC}                            ${BICyan}│${NC}"
-    echo -e "${BICyan} └──────────────────────────────┴────────────────────────────┘${NC}"
+    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}ISP${NC}  : $ISP   ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}TIME${NC} : $SERVER_TIME       ${BICyan}│${NC}"
+    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}DOM${NC}  : $DOMAIN     ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}UP${NC}   : $UPTIME   ${BICyan}│${NC}"
+    echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}NS${NC}   : $NS_DOMAIN    ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}LOAD${NC} : $LOAD           ${BICyan}│${NC}"
+    echo -e "${BICyan} ├──────────────────────────────┴────────────────────────────┤${NC}"
+    echo -e "${BICyan} │${NC}              ${BIYellow}BANDWIDTH MONITORING (VNSTAT)${NC}               ${BICyan}│${NC}"
+    echo -e "${BICyan} │${NC}     ${BIGreen}TODAY:${NC} $BW_TODAY           ${BIGreen}MONTH:${NC} $BW_MONTH          ${BICyan}│${NC}"
+    echo -e "${BICyan} └───────────────────────────────────────────────────────────┘${NC}"
 }
 
 function show_menu() {
@@ -346,8 +355,8 @@ function show_menu() {
     echo -e "   ${BICyan}• 02${NC}  Create V2Ray Account ${BIYellow}(Multi-Proto)${NC}"
     echo -e "   ${BICyan}• 03${NC}  Renew User Services ${GRAY}(SSH/Xray)${NC}"
     echo -e "   ${BICyan}• 04${NC}  User Details & Monitor"
-    echo -e "   ${BICyan}• 05${NC}  List Active Users ${BIGreen}(NEW)${NC}"
-    echo -e "   ${BICyan}• 06${NC}  List Expired Users ${BIRed}(NEW)${NC}"
+    echo -e "   ${BICyan}• 05${NC}  List Active Users"
+    echo -e "   ${BICyan}• 06${NC}  List Expired Users"
     echo -e "   ${BICyan}• 07${NC}  Delete / Lock User"
     echo -e ""
     echo -e "   ${BIYellow}SYSTEM TOOLS${NC}"
@@ -360,7 +369,7 @@ function show_menu() {
     echo -e "   ${BICyan}• 12${NC}  Fix SSL / Restart Services"
     echo -e "   ${BICyan}• 13${NC}  Auto-Reboot Scheduler"
     echo -e "   ${BICyan}• 14${NC}  Backup Configurations"
-    echo -e "   ${BICyan}• 15${NC}  Restore Backup ${BIGreen}(NEW)${NC}"
+    echo -e "   ${BICyan}• 15${NC}  Restore Backup"
     echo -e "   ${BICyan}• 16${NC}  Change Domain / Host"
     echo -e "   ${BICyan}• 17${NC}  Change Name Server (NS)"
     echo -e "   ${BICyan}• 18${NC}  Change SSH Banner Message"
