@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH VPN MANAGER - MONITOR EDITION v12.6
-# (Added: Discord/Telegram Auto-Backup, Settings Menu)
+# EDUFWESH VPN MANAGER - MONITOR EDITION v12.7
+# (Fixed: Discord Uploads, Auto-Install Zip, Debugging)
 # =========================================================
 
 # --- BRANDING COLORS ---
@@ -16,6 +16,14 @@ NC='\033[0m'              GRAY='\033[0;90m'
 MYIP=$(wget -qO- icanhazip.com)
 DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
 ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
+
+# --- ENSURE DEPENDENCIES ARE INSTALLED ---
+# This fixes the "Not Saving" issue if zip is missing
+if ! command -v zip &> /dev/null; then
+    echo -e "${GRAY}Installing missing zip tools...${NC}"
+    apt-get update >/dev/null 2>&1
+    apt-get install zip unzip curl -y >/dev/null 2>&1
+fi
 
 # --- FIND NAME SERVER (NS) ---
 if [ -f "/etc/xray/dns" ]; then NS_DOMAIN=$(cat /etc/xray/dns);
@@ -50,6 +58,7 @@ function backup_settings() {
     echo -e "   ${BICyan}[2]${NC} Turn Auto-Backup ${BIRed}OFF${NC}"
     echo -e "   ${BICyan}[3]${NC} Configure Telegram"
     echo -e "   ${BICyan}[4]${NC} Configure Discord"
+    echo -e "   ${BICyan}[5]${NC} ${BIYellow}TEST BACKUP NOW${NC} (Try this first)"
     echo -e ""
     echo -e "   ${BICyan}[0]${NC} Return to Menu"
     echo ""
@@ -79,21 +88,39 @@ function backup_settings() {
             echo "discord" > /etc/edu_backup_type
             echo -e "${BIGreen}Discord Configured!${NC}"
             sleep 1; backup_settings ;;
+        5)
+            # FORCE TEST
+            clear
+            echo -e "${BIYellow}Running Manual Test...${NC}"
+            # Force enable temporarily for test if off, or just run function
+            auto_backup "force"
+            echo -e ""
+            read -n 1 -s -r -p "Press any key to return..."
+            backup_settings
+            ;;
         0) menu ;;
         *) backup_settings ;;
     esac
 }
 
 function upload_backup() {
-    # Check if feature is enabled
+    # Check if feature is enabled (Unless forced)
+    MODE=$1
     STATUS=$(cat /etc/edu_backup_status 2>/dev/null || echo "off")
-    if [[ "$STATUS" != "on" ]]; then
+    
+    if [[ "$MODE" != "force" && "$STATUS" != "on" ]]; then
         return
     fi
 
     TYPE=$(cat /etc/edu_backup_type 2>/dev/null)
     FILE_PATH="/tmp/vpn_backup.zip"
     CAPTION="Auto-Backup: $(date '+%Y-%m-%d %H:%M:%S') | IP: $MYIP"
+
+    # Verify File Exists Before Uploading
+    if [ ! -f "$FILE_PATH" ]; then
+        echo -e "${BIRed}Error: Backup file creation failed! (Check 'zip' install)${NC}"
+        return
+    fi
 
     echo -e "${GRAY}Uploading backup to $TYPE...${NC}"
 
@@ -110,11 +137,24 @@ function upload_backup() {
     elif [[ "$TYPE" == "discord" ]]; then
         DC_URL=$(cat /etc/edu_backup_dc_url)
         if [[ -n "$DC_URL" ]]; then
-            curl -s -F "file=@$FILE_PATH" -F "content=$CAPTION" "$DC_URL" > /dev/null
-            echo -e "${BIGreen}Sent to Discord!${NC}"
+            # Discord requires User-Agent and multipart form data
+            curl -s -X POST \
+                 -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+                 -F "payload_json={\"content\": \"$CAPTION\"}" \
+                 -F "file=@$FILE_PATH" \
+                 "$DC_URL" > /dev/null
+            
+            # Check if curl succeeded silently (Discord doesn't always reply with body on success)
+            if [ $? -eq 0 ]; then
+                echo -e "${BIGreen}Sent to Discord!${NC}"
+            else
+                echo -e "${BIRed}Upload Failed! Check Webhook URL.${NC}"
+            fi
         else
             echo -e "${BIRed}Discord config missing!${NC}"
         fi
+    else
+        echo -e "${BIRed}No backup type selected in settings!${NC}"
     fi
 }
 
@@ -124,8 +164,10 @@ function upload_backup() {
 
 # --- SILENT AUTO BACKUP ---
 function auto_backup() {
+    MODE=$1 # Accepts "force" argument
+    
     echo -e ""
-    echo -e "${GRAY}Auto-updating backup configuration...${NC}"
+    echo -e "${GRAY}Syncing backup configuration...${NC}"
     
     mkdir -p /root/backup_edu
     mkdir -p /root/backup_edu/ssh_backup
@@ -138,18 +180,29 @@ function auto_backup() {
     cp /etc/gshadow /root/backup_edu/ssh_backup/
     
     # Zip & Permission
+    rm -f /tmp/vpn_backup.zip
     zip -r /tmp/vpn_backup.zip /root/backup_edu >/dev/null 2>&1
     chmod 777 /tmp/vpn_backup.zip
     
     # Cleanup
     rm -rf /root/backup_edu
+
+    # Verify Creation
+    if [ ! -f "/tmp/vpn_backup.zip" ]; then
+        echo -e "${BIRed}Backup Failed! Could not create zip file.${NC}"
+        return
+    fi
     
     # TRIGGER UPLOAD
-    upload_backup
+    upload_backup "$MODE"
     
-    echo -e "${BIGreen}Backup Synced!${NC}"
-    sleep 1
-    menu
+    echo -e "${BIGreen}Backup Process Complete!${NC}"
+    # Only pause if in force mode/manual test, otherwise be fast
+    if [[ "$MODE" == "force" ]]; then
+        sleep 1
+    else
+        sleep 0.5
+    fi
 }
 
 # --- LIST ACTIVE USERS ---
@@ -432,7 +485,7 @@ function show_dashboard() {
 
     clear
     echo -e "${BICyan} ┌───────────────────────────────────────────────────────────┐${NC}"
-    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.6${NC}            ${BICyan}│${NC}"
+    echo -e "${BICyan} │ ${BIWhite}●${NC}           ${BIYellow}EDUFWESH VPN MANAGER ${BIWhite}PRO v12.7${NC}            ${BICyan}│${NC}"
     echo -e "${BICyan} ├──────────────────────────────┬────────────────────────────┤${NC}"
     echo -e "${BICyan} │${NC} ${GRAY}NETWORK INFO${NC}                 ${BICyan}│${NC} ${GRAY}SYSTEM STATUS${NC}              ${BICyan}│${NC}"
     echo -e "${BICyan} │${NC} ${BICyan}»${NC} ${BIWhite}IP${NC}   : $MYIP       ${BICyan}│${NC} ${BICyan}»${NC} ${BIWhite}RAM${NC}  : $RAM_USED / ${RAM_TOTAL}MB    ${BICyan}│${NC}"
