@@ -1,22 +1,105 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH MANAGER - ULTIMATE ENTERPRISE v16.2
-# (Logic: 100% v12.9 Parity | Visuals: v16.0 Engine)
+# EDUFWESH MANAGER - ULTIMATE ENTERPRISE v17.0
+# (Features: Unicode Font Styles, Font Scope, 15 Themes)
 # =========================================================
 
 # --- 1. VISUAL PREFERENCES ENGINE ---
 THEME_FILE="/etc/edu_theme"
-FONT_FILE="/etc/edu_font"
+FONT_FILE="/etc/edu_font"        # For Figlet (Old style)
+U_FONT_FILE="/etc/edu_ufont"     # For Fancy Unicode (New)
+SCOPE_FILE="/etc/edu_scope"      # Banner Only vs Full
 
 # Set Defaults
 if [ ! -f "$THEME_FILE" ]; then echo "blue" > "$THEME_FILE"; fi
 if [ ! -f "$FONT_FILE" ]; then echo "standard" > "$FONT_FILE"; fi
+if [ ! -f "$U_FONT_FILE" ]; then echo "normal" > "$U_FONT_FILE"; fi
+if [ ! -f "$SCOPE_FILE" ]; then echo "banner" > "$SCOPE_FILE"; fi
 
 CURr_THEME=$(cat "$THEME_FILE")
-CURr_FONT=$(cat "$FONT_FILE")
+CURr_UFONT=$(cat "$U_FONT_FILE")
+CURr_SCOPE=$(cat "$SCOPE_FILE")
 
-# --- THEME DEFINITIONS ---
+# --- 1.5 UNICODE FONT MAPPING ENGINE ---
+# We pre-define text strings based on the selected font to ensure speed and stability.
+# This prevents breaking color codes or command outputs.
+
+# Default Texts
+T_HEADER="EDUFWESH ENTERPRISE MANAGER"
+T_U_MGMT="USER MANAGEMENT"
+T_S_OPS="SERVER OPERATIONS"
+T_CONFIG="CONFIGURATION & CLOUD"
+T_EXIT="Exit Dashboard"
+L_HOST="Host"
+L_TIME="Time"
+L_IP="IP"
+L_ISP="ISP"
+L_NS="NS"
+L_SEC="Sec"
+L_RAM="RAM"
+L_CPU="CPU"
+L_SSH="SSH"
+L_XRAY="XRAY"
+L_WEB="WEB"
+
+case $CURr_UFONT in
+    "mono") # 𝙼𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎
+        T_HEADER="𝙴𝙳𝚄𝙵𝚆𝙴𝚂𝙷 𝙴𝙽𝚃𝙴𝚁𝙿𝚁𝙸𝚂𝙴 𝙼𝙰𝙽𝙰𝙶𝙴𝚁"; T_U_MGMT="𝚄𝚂𝙴𝚁 𝙼𝙰𝙽𝙰𝙶𝙴𝙼𝙴𝙽𝚃"
+        T_S_OPS="𝚂𝙴𝚁𝚅𝙴𝚁 𝙾𝙿𝙴𝚁𝙰𝚃𝙸𝙾𝙽𝚂"; T_CONFIG="𝙲𝙾𝙽𝙵𝙸𝙶𝚄𝚁𝙰𝚃𝙸𝙾𝙽 & 𝙲𝙻𝙾𝚄𝙳"
+        T_EXIT="𝙴𝚡𝚒𝚝 𝙳𝚊𝚜𝚑𝚋𝚘𝚊𝚛𝚍"
+        L_HOST="𝙷𝚘𝚜𝚝"; L_TIME="𝚃𝚒𝚖𝚎"; L_IP="𝙸𝙿"; L_ISP="𝙸𝚂𝙿"; L_NS="𝙽𝚂"; L_SEC="𝚂𝚎𝚌"
+        L_RAM="𝚁𝙰𝙼"; L_CPU="𝙲𝙿𝚄"; L_SSH="𝚂𝚂𝙷"; L_XRAY="𝚇𝚁𝙰𝚈"; L_WEB="𝚆𝙴𝙱"
+        ;;
+    "fraktur") # 𝕳𝖊𝖑𝖑𝖔
+        T_HEADER="𝕰𝕯𝖀𝕱𝖂𝕰𝕾𝕳 𝕰𝕹𝕿𝕰𝕽𝕻𝕽𝕴𝕾𝕰 𝕸𝕬𝕹𝕬𝕲𝕰𝕽"; T_U_MGMT="𝖀𝕾𝕰𝕽 𝕸𝕬𝕹𝕬𝕲𝕰𝕸𝕰𝕹𝕿"
+        T_S_OPS="𝕾𝕰𝕽𝖁𝕰𝕽 𝕺𝕻𝕰𝕽𝕬𝕿𝕴𝕺𝕹𝕾"; T_CONFIG="𝕮𝕺𝕹𝕱𝕴𝕲𝖀𝕽𝕬𝕿𝕴𝕺𝕹 & 𝕮𝕷𝕺𝖀𝕯"
+        T_EXIT="𝕰𝖝𝖎𝖙 𝕯𝖆𝖘𝖍𝖇𝖔𝖆𝖗𝖉"
+        L_HOST="𝕳𝖔𝖘𝖙"; L_TIME="𝕿𝖎𝖒𝖊"; L_IP="𝕴𝕻"; L_ISP="𝕴𝕾𝕻"; L_NS="𝕹𝕾"; L_SEC="𝕾𝖊𝖈"
+        L_RAM="𝕽𝕬𝕸"; L_CPU="𝕮𝕻𝖀"; L_SSH="𝕾𝕾𝕳"; L_XRAY="𝖃𝕽𝕬𝖄"; L_WEB="𝖂𝕰𝕭"
+        ;;
+    "script") # ℋ𝒾
+        T_HEADER="ℰ𝒟𝒰ℱ𝒲ℰ𝒮ℋ ℰ𝒩𝒯ℰℛ𝒫ℛℐ𝒮ℰ ℳ𝒜𝒩𝒜𝒢ℰℛ"; T_U_MGMT="𝒰𝒮ℰℛ ℳ𝒜𝒩𝒜𝒢ℰℳℰ𝒩𝒯"
+        T_S_OPS="𝒮ℰℛ𝒱ℰℛ 𝒪𝒫ℰℛ𝒜𝒯ℐ𝒪𝒩𝒮"; T_CONFIG="𝒞𝒪𝒩ℱℐ𝒢𝒰ℛ𝒜𝒯ℐ𝒪𝒩 & 𝒞ℒ𝒪𝒰𝒟"
+        T_EXIT="ℰ𝓍𝒾𝓉 𝒟𝒶𝓈𝒽𝒷ℴ𝒶𝓇𝒹"
+        L_HOST="ℋℴ𝓈𝓉"; L_TIME="𝒯𝒾𝓂ℯ"; L_IP="ℐ𝒫"; L_ISP="ℐ𝒮𝒫"; L_NS="𝒩𝒮"; L_SEC="𝒮ℯ𝒸"
+        L_RAM="ℛ𝒜ℳ"; L_CPU="𝒞𝒫𝒰"; L_SSH="𝒮𝒮ℋ"; L_XRAY="𝒳ℛ𝒜𝒴"; L_WEB="𝒲ℰℬ"
+        ;;
+    "double") # ℍ𝕖𝕝𝕝𝕠
+        T_HEADER="𝔼𝔻𝕌𝔽𝕎𝔼𝕊ℍ 𝔼ℕ𝕋𝔼ℝℙℝ𝕀𝕊𝔼 𝕄𝔸ℕ𝔸𝔾𝔼ℝ"; T_U_MGMT="𝕌𝕊𝔼ℝ 𝕄𝔸ℕ𝔸𝔾𝔼𝕄𝔼ℕ𝕋"
+        T_S_OPS="𝕊𝔼ℝ𝕍𝔼ℝ 𝕆ℙ𝔼ℝ𝔸𝕋𝕀𝕆ℕ𝕊"; T_CONFIG="ℂ𝕆ℕ𝔽𝕀𝔾𝕌ℝ𝔸𝕋𝕀𝕆ℕ & ℂ𝕃𝕆𝕌𝔻"
+        T_EXIT="𝔼𝕩𝕚𝕥 𝔻𝕒𝕤𝕙𝕓𝕠𝕒𝕣𝕕"
+        L_HOST="ℍ𝕠𝕤𝕥"; L_TIME="𝕋𝕚𝕞𝕖"; L_IP="𝕀ℙ"; L_ISP="𝕀𝕊ℙ"; L_NS="ℕ𝕊"; L_SEC="𝕊𝕖𝕔"
+        L_RAM="ℝ𝔸𝕄"; L_CPU="ℂℙ𝕌"; L_SSH="𝕊𝕊ℍ"; L_XRAY="𝕏ℝ𝔸𝕐"; L_WEB="𝕎𝔼𝔹"
+        ;;
+    "bold_script") # 𝓗𝓲
+        T_HEADER="𝓔𝓓𝓤𝓕𝓦𝓔𝓢𝓗 𝓔𝓝𝓣𝓔𝓡𝓟𝓡𝓘𝓢𝓔 𝓜𝓐𝓝𝓐𝓖𝓔𝓡"; T_U_MGMT="𝓤𝓢𝓔𝓡 𝓜𝓐𝓝𝓐𝓖𝓔𝓜𝓔𝓝𝓣"
+        T_S_OPS="𝓢𝓔𝓡𝓥𝓔𝓡 𝓞𝓟𝓔𝓡𝓐𝓣𝓘𝓞𝓝𝓢"; T_CONFIG="𝓒𝓞𝓝𝓕𝓘𝓖𝓤𝓡𝓐𝓣𝓘𝓞𝓝 & 𝓒𝓛𝓞𝓤𝓓"
+        T_EXIT="𝓔𝔁𝓲𝓽 𝓓𝓪𝓼𝓱𝓫𝓸𝓪𝓻𝓭"
+        L_HOST="𝓗𝓸𝓼𝓽"; L_TIME="𝓣𝓲𝓶𝓮"; L_IP="𝓘𝓟"; L_ISP="𝓘𝓢𝓟"; L_NS="𝓝𝓢"; L_SEC="𝓢𝓮𝓬"
+        L_RAM="𝓡𝓐𝓜"; L_CPU="𝓒𝓟𝓤"; L_SSH="𝓢𝓢𝓗"; L_XRAY="𝓧𝓡𝓐𝓨"; L_WEB="𝓦𝓔𝓑"
+        ;;
+    "small") # ʜᴇʟʟᴏ
+        T_HEADER="ᴇᴅᴜғᴡᴇsʜ ᴇɴᴛᴇʀᴘʀɪsᴇ ᴍᴀɴᴀɢᴇʀ"; T_U_MGMT="ᴜsᴇʀ ᴍᴀɴᴀɢᴇᴍᴇɴᴛ"
+        T_S_OPS="sᴇʀᴠᴇʀ ᴏᴘᴇʀᴀᴛɪᴏɴs"; T_CONFIG="ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ & ᴄʟᴏᴜᴅ"
+        T_EXIT="ᴇxɪᴛ ᴅᴀsʜʙᴏᴀʀᴅ"
+        L_HOST="ʜᴏsᴛ"; L_TIME="ᴛɪᴍᴇ"; L_IP="ɪᴘ"; L_ISP="ɪsᴘ"; L_NS="ɴs"; L_SEC="sᴇᴄ"
+        L_RAM="ʀᴀᴍ"; L_CPU="ᴄᴘᴜ"; L_SSH="ssʜ"; L_XRAY="xʀᴀʏ"; L_WEB="ᴡᴇʙ"
+        ;;
+esac
+
+# APPLY SCOPE LOGIC
+if [[ "$CURr_SCOPE" == "banner" ]]; then
+    # Reset everything EXCEPT Header to normal if scope is just banner
+    T_U_MGMT="USER MANAGEMENT"
+    T_S_OPS="SERVER OPERATIONS"
+    T_CONFIG="CONFIGURATION & CLOUD"
+    T_EXIT="Exit Dashboard"
+    L_HOST="Host"; L_TIME="Time"; L_IP="IP"; L_ISP="ISP"; L_NS="NS"; L_SEC="Sec"
+    L_RAM="RAM"; L_CPU="CPU"; L_SSH="SSH"; L_XRAY="XRAY"; L_WEB="WEB"
+fi
+
+# --- THEME COLORS ---
 case $CURr_THEME in
     "green")    C_MAIN='\033[1;32m'; C_ACCENT='\033[1;32m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;32m' ;;
     "purple")   C_MAIN='\033[1;35m'; C_ACCENT='\033[1;36m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;35m' ;;
@@ -97,170 +180,93 @@ function start_backup_watchdog() {
 }
 
 # =========================================================
-# 4. RESTORED v12.9 SELECTORS (The "Missing" Link)
+# 4. RESTORED v12.9 SELECTORS
 # =========================================================
 
 function create_account_selector() {
-    clear
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${C_TEXT}           SELECT PROTOCOL TYPE${RESET}"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "  [1] VMess Account   (Standard)"
-    echo -e "  [2] VLESS Account   (Lightweight)"
-    echo -e "  [3] Trojan Account  (Anti-Detect)"
-    echo -e ""
-    echo -e "  [0] Cancel"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "${C_TEXT}           SELECT PROTOCOL TYPE${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "  [1] VMess Account"; echo -e "  [2] VLESS Account"; echo -e "  [3] Trojan Account"; echo -e ""; echo -e "  [0] Cancel"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     read -p "Select > " p_opt
-    case $p_opt in
-        1) clear ; start_backup_watchdog ; add-ws ;;
-        2) clear ; start_backup_watchdog ; add-vless ;;
-        3) clear ; start_backup_watchdog ; add-tr ;;
-        0) menu ;;
-        *) menu ;;
-    esac
+    case $p_opt in 1) clear ; start_backup_watchdog ; add-ws ;; 2) clear ; start_backup_watchdog ; add-vless ;; 3) clear ; start_backup_watchdog ; add-tr ;; 0) menu ;; *) menu ;; esac
 }
 
 function renew_selector() {
-    clear
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${C_TEXT}           RENEW USER ACCOUNT${RESET}"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "  [1] Renew SSH / WS Account"
-    echo -e "${C_LABEL}──────────────────────────────────────────────────${RESET}"
-    echo -e "  [2] Renew VMess Account"
-    echo -e "  [3] Renew VLESS Account"
-    echo -e "  [4] Renew Trojan Account"
-    echo -e ""
-    echo -e "  [0] Cancel"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "${C_TEXT}           RENEW USER ACCOUNT${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "  [1] Renew SSH / WS"; echo -e "${C_LABEL}──────────────────────────────────────────────────${RESET}"; echo -e "  [2] Renew VMess"; echo -e "  [3] Renew VLESS"; echo -e "  [4] Renew Trojan"; echo -e ""; echo -e "  [0] Cancel"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     read -p "Select > " r_opt
-    case $r_opt in
-        1) clear ; start_backup_watchdog ; renew ;;
-        2) clear ; start_backup_watchdog ; renew-ws ;;
-        3) clear ; start_backup_watchdog ; renew-vless ;;
-        4) clear ; start_backup_watchdog ; renew-tr ;;
-        0) menu ;;
-        *) menu ;;
-    esac
+    case $r_opt in 1) clear ; start_backup_watchdog ; renew ;; 2) clear ; start_backup_watchdog ; renew-ws ;; 3) clear ; start_backup_watchdog ; renew-vless ;; 4) clear ; start_backup_watchdog ; renew-tr ;; 0) menu ;; *) menu ;; esac
 }
 
 # =========================================================
-# 5. RESTORED LOGIC FUNCTIONS (Feature Parity v12.9)
+# 5. CORE FUNCTIONS (v12.9 Logic)
 # =========================================================
+function restart_services_pro() {
+    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "${C_TEXT}           RESTARTING SYSTEM SERVICES${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    function restart_visual() { svc=$1; echo -ne "  Restarting $svc... "; systemctl restart $svc; if [ $? -eq 0 ]; then echo -e "${C_SUCCESS}DONE${RESET}"; else echo -e "${C_ALERT}FAIL${RESET}"; fi; sleep 0.5; }
+    restart_visual "ssh"; restart_visual "xray"; restart_visual "nginx"; restart_visual "cron"
+    echo -e ""; echo -e "${C_SUCCESS}  All services refreshed.${RESET}"; sleep 2; menu
+}
 
 function list_active() {
-    clear
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "             ${C_TEXT}ACTIVE USER DATABASE${RESET}"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${C_ACCENT} SSH ACCOUNTS${RESET}"
-    today=$(date +%s)
+    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "             ${C_TEXT}ACTIVE USER DATABASE${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${C_ACCENT} SSH ACCOUNTS${RESET}"; today=$(date +%s)
     while IFS=: read -r username _ uid _ _ _ _; do
         if [[ $uid -ge 1000 && $username != "nobody" ]]; then
             exp_date=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
-            if [[ "$exp_date" == *"never"* ]]; then echo -e "  ● ${C_SUCCESS}$username${RESET} (Lifetime)";
-            else
+            if [[ "$exp_date" == *"never"* ]]; then echo -e "  ● ${C_SUCCESS}$username${RESET} (Lifetime)"; else
                  exp_sec=$(date -d "$exp_date" +%s 2>/dev/null)
                  if [[ $exp_sec -ge $today ]]; then echo -e "  ● ${C_SUCCESS}$username${RESET} ($exp_date)"; fi
             fi
         fi
     done < /etc/passwd
-    echo ""
-    echo -e "${C_ACCENT} XRAY ACCOUNTS${RESET}"
-    if [ -f "/etc/xray/config.json" ]; then
-        grep '"email":' /etc/xray/config.json | cut -d '"' -f 4 | sed "s/^/  ● ${C_SUCCESS}/" | sed "s/$/${RESET}/"
-    fi
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    read -n 1 -s -r -p "Key..."; menu
+    echo ""; echo -e "${C_ACCENT} XRAY ACCOUNTS${RESET}"
+    if [ -f "/etc/xray/config.json" ]; then grep '"email":' /etc/xray/config.json | cut -d '"' -f 4 | sed "s/^/  ● ${C_SUCCESS}/" | sed "s/$/${RESET}/"; fi
+    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; read -n 1 -s -r -p "Key..."; menu
 }
 
 function list_expired() {
-    clear
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "             ${C_ALERT}EXPIRED USER ACCOUNTS${RESET}"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "             ${C_ALERT}EXPIRED USER ACCOUNTS${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     today=$(date +%s); count=0
     while IFS=: read -r username _ uid _ _ _ _; do
         if [[ $uid -ge 1000 && $username != "nobody" ]]; then
             exp_date=$(chage -l "$username" | grep "Account expires" | cut -d: -f2)
             if [[ "$exp_date" != *"never"* ]]; then
                  exp_sec=$(date -d "$exp_date" +%s 2>/dev/null)
-                 if [[ $exp_sec -lt $today && -n "$exp_sec" ]]; then
-                     echo -e "  ● ${C_ALERT}$username${RESET} (Expired: $exp_date)"
-                     ((count++))
-                 fi
+                 if [[ $exp_sec -lt $today && -n "$exp_sec" ]]; then echo -e "  ● ${C_ALERT}$username${RESET} (Expired: $exp_date)"; ((count++)); fi
             fi
         fi
     done < /etc/passwd
     if [[ $count -eq 0 ]]; then echo -e "  ${C_SUCCESS}(No expired SSH users found)${RESET}"; fi
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    read -n 1 -s -r -p "Key..."; menu
+    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; read -n 1 -s -r -p "Key..."; menu
 }
 
 function restore_configs() {
-    clear
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "             ${C_ACCENT}RESTORE BACKUP${RESET}"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    read -p "Have you uploaded 'vpn_backup.zip' to /tmp/? [y/n]: " ans
-    if [[ "$ans" != "y" ]]; then menu; fi
+    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "             ${C_ACCENT}RESTORE BACKUP${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    read -p "Upload 'vpn_backup.zip' to /tmp/. Ready? [y/n]: " ans; if [[ "$ans" != "y" ]]; then menu; fi
     if [ ! -f "/tmp/vpn_backup.zip" ]; then echo -e "${C_ALERT}File not found!${RESET}"; sleep 2; menu; fi
-    echo -e "${C_LABEL}Restoring...${RESET}"
-    mkdir -p /root/restore_temp
-    unzip -o /tmp/vpn_backup.zip -d /root/restore_temp > /dev/null 2>&1
-    rm -rf /etc/xray/*
-    cp -r /root/restore_temp/root/backup_edu/xray_backup/* /etc/xray/ 2>/dev/null
-    cp /root/restore_temp/root/backup_edu/ssh_backup/* /etc/ 2>/dev/null
-    cp /root/restore_temp/ssh_backup/* /etc/ 2>/dev/null
-    rm -rf /root/restore_temp
-    systemctl restart ssh sshd xray
-    echo -e "${C_SUCCESS}Restore Complete!${RESET}"; sleep 2; menu
+    echo -e "${C_LABEL}Restoring...${RESET}"; mkdir -p /root/restore_temp; unzip -o /tmp/vpn_backup.zip -d /root/restore_temp > /dev/null 2>&1
+    rm -rf /etc/xray/*; cp -r /root/restore_temp/root/backup_edu/xray_backup/* /etc/xray/ 2>/dev/null
+    cp /root/restore_temp/root/backup_edu/ssh_backup/* /etc/ 2>/dev/null; cp /root/restore_temp/ssh_backup/* /etc/ 2>/dev/null; rm -rf /root/restore_temp
+    systemctl restart ssh sshd xray; echo -e "${C_SUCCESS}Restore Complete!${RESET}"; sleep 2; menu
 }
 
 function auto_reboot() {
-    clear
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "             ${C_TEXT}AUTO-REBOOT SCHEDULER${RESET}"
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "  [1] Enable Daily (00:00)   [2] Disable"
-    read -p "Select > " x
+    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "             ${C_TEXT}AUTO-REBOOT SCHEDULER${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "  [1] Enable Daily (00:00)   [2] Disable"; read -p "Select > " x
     if [[ "$x" == "1" ]]; then echo "0 0 * * * root reboot" > /etc/cron.d/auto_reboot_edu; echo -e "${C_SUCCESS}Enabled!${RESET}"
-    elif [[ "$x" == "2" ]]; then rm -f /etc/cron.d/auto_reboot_edu; echo -e "${C_ALERT}Disabled!${RESET}"; fi
-    sleep 1; menu
+    elif [[ "$x" == "2" ]]; then rm -f /etc/cron.d/auto_reboot_edu; echo -e "${C_ALERT}Disabled!${RESET}"; fi; sleep 1; menu
 }
 
-function change_banner() {
-    clear; if ! command -v nano &> /dev/null; then apt-get install nano -y > /dev/null 2>&1; fi
-    nano /etc/issue.net; echo -e "${C_LABEL}Restarting SSH...${RESET}"; service ssh restart; service sshd restart; menu
-}
-
-function change_domain() {
-    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "Current: $DOMAIN"; read -p "New Domain: " d
-    if [[ -n "$d" ]]; then echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; echo -e "${C_LABEL}Restarting Services...${RESET}"; systemctl restart nginx xray; echo -e "${C_SUCCESS}Updated!${RESET}"; fi
-    sleep 1; menu
-}
-
-function change_ns() {
-    # FIXED: Now updates BOTH files like v12.9
-    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "Current NS: $NS_DOMAIN"; read -p "New NS: " n
-    if [[ -n "$n" ]]; then 
-        echo "$n" > /etc/xray/dns
-        echo "$n" > /root/nsdomain
-        echo -e "${C_SUCCESS}Updated!${RESET}"
-    fi
-    sleep 1; menu
-}
+function change_banner() { clear; if ! command -v nano &> /dev/null; then apt-get install nano -y > /dev/null 2>&1; fi; nano /etc/issue.net; echo -e "${C_LABEL}Restarting SSH...${RESET}"; service ssh restart; service sshd restart; menu; }
+function change_domain() { clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -n "$d" ]]; then echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; echo -e "${C_LABEL}Restarting Services...${RESET}"; systemctl restart nginx xray; echo -e "${C_SUCCESS}Updated!${RESET}"; fi; sleep 1; menu; }
+function change_ns() { clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "Current NS: $NS_DOMAIN"; read -p "New NS: " n; if [[ -n "$n" ]]; then echo "$n" > /etc/xray/dns; echo "$n" > /root/nsdomain; echo -e "${C_SUCCESS}Updated!${RESET}"; fi; sleep 1; menu; }
 
 # =========================================================
 # 6. VISUAL UTILITIES
 # =========================================================
 
 function draw_bar() {
-    local pct=$1; local width=18
-    local fill=$(echo "$pct / 100 * $width" | bc -l | awk '{printf("%d",$1 + 0.5)}')
+    local pct=$1; local width=18; local fill=$(echo "$pct / 100 * $width" | bc -l | awk '{printf("%d",$1 + 0.5)}')
     printf "["; for ((i=0; i<fill; i++)); do printf "${C_BAR}█${RESET}"; done; for ((i=fill; i<width; i++)); do printf "${C_LABEL}░${RESET}"; done; printf "] ${pct}%%"
 }
 
@@ -269,8 +275,7 @@ function live_traffic_monitor() {
     IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
     while true; do
         R1=$(cat /sys/class/net/$IFACE/statistics/rx_bytes); T1=$(cat /sys/class/net/$IFACE/statistics/tx_bytes)
-        sleep 1
-        R2=$(cat /sys/class/net/$IFACE/statistics/rx_bytes); T2=$(cat /sys/class/net/$IFACE/statistics/tx_bytes)
+        sleep 1; R2=$(cat /sys/class/net/$IFACE/statistics/rx_bytes); T2=$(cat /sys/class/net/$IFACE/statistics/tx_bytes)
         RKBPS=$(expr $R2 - $R1); RKBPS=$(expr $RKBPS / 1024); TKBPS=$(expr $T2 - $T1); TKBPS=$(expr $TKBPS / 1024)
         echo -ne "\r  ${C_SUCCESS}↓ DOWN:${RESET} ${RKBPS} KB/s    ${C_ALERT}↑ UP:${RESET} ${TKBPS} KB/s   "
     done
@@ -284,13 +289,6 @@ function generate_id_card() {
     clear
     echo -e "${C_MAIN}╔════════════════════════════════════════════╗${RESET}"; echo -e "${C_MAIN}║${RESET}           ${C_TEXT}PREMIUM VPN ACCESS${RESET}               ${C_MAIN}║${RESET}"; echo -e "${C_MAIN}╠════════════════════════════════════════════╣${RESET}"; echo -e "${C_MAIN}║${RESET} ${C_LABEL}Username :${RESET} ${C_ACCENT}$user${RESET}"; echo -e "${C_MAIN}║${RESET} ${C_LABEL}Password :${RESET} (Hidden/Encrypted)"; echo -e "${C_MAIN}║${RESET} ${C_LABEL}Expiry   :${RESET} $EXP"; echo -e "${C_MAIN}║${RESET} ${C_LABEL}Host IP  :${RESET} $MYIP"; echo -e "${C_MAIN}║${RESET} ${C_LABEL}ISP      :${RESET} $ISP"; echo -e "${C_MAIN}╠════════════════════════════════════════════╣${RESET}"; echo -e "${C_MAIN}║${RESET}         ${C_SUCCESS}● STATUS: ACTIVE${RESET}                   ${C_MAIN}║${RESET}"; echo -e "${C_MAIN}╚════════════════════════════════════════════╝${RESET}"; echo -e ""
     read -n 1 -s -r -p "Key..."; menu
-}
-
-function restart_services_pro() {
-    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "${C_TEXT}           RESTARTING SYSTEM SERVICES${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    function restart_visual() { svc=$1; echo -ne "  Restarting $svc... "; systemctl restart $svc; if [ $? -eq 0 ]; then echo -e "${C_SUCCESS}DONE${RESET}"; else echo -e "${C_ALERT}FAIL${RESET}"; fi; sleep 0.5; }
-    restart_visual "ssh"; restart_visual "xray"; restart_visual "nginx"; restart_visual "cron"
-    echo -e ""; echo -e "${C_SUCCESS}  All services refreshed.${RESET}"; sleep 2; menu
 }
 
 function detailed_status() {
@@ -314,17 +312,34 @@ function detailed_status() {
 
 function visual_settings() {
     clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "${C_TEXT}           VISUAL PREFERENCES STUDIO${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${C_ACCENT} [A] COLOR THEMES${RESET}"
     echo -e "  [01] Corporate Blue   [06] Ocean Teal     [11] Solarized"
     echo -e "  [02] Hacker Green     [07] Retro Amber    [12] Gruvbox"
     echo -e "  [03] Cyber Purple     [08] Monochrome     [13] Synthwave"
     echo -e "  [04] Admin Red        [09] Dracula        [14] Toxic Lime"
     echo -e "  [05] Luxury Gold      [10] Nord Ice       [15] Royal Gold"
-    echo -e ""; echo -e "${C_ACCENT} FONT STYLES (FIGlet)${RESET}"; echo -e "  [16] Standard         [18] Slant (Pro)"; echo -e "  [17] Big 3D           [19] Banner (Wide)"; echo -e ""; read -p "Select > " v_opt
+    echo -e ""
+    echo -e "${C_ACCENT} [B] UNICODE FONT STYLE${RESET}"
+    echo -e "  [21] Normal (Default)    [24] 𝕳𝖊𝖑𝖑𝖔 (Fraktur)"
+    echo -e "  [22] 𝙼𝚘𝚗𝚘𝚜𝚙𝚊𝚌𝚎           [25] ℋ𝒾 (Script)"
+    echo -e "  [23] ℍ𝕖𝕝𝕝𝕠 (Double)        [26] ʜᴇʟʟᴏ (Small Caps)"
+    echo -e "  [27] 𝓗𝓲 (Bold Script)"
+    echo -e ""
+    echo -e "${C_ACCENT} [C] FONT SCOPE${RESET}"
+    echo -e "  [31] Banner Only (Safe)  [32] Full Interface (Max)"
+    echo -e ""
+    read -p "Select > " v_opt
     case $v_opt in
         1|01) echo "blue" > /etc/edu_theme ;; 2|02) echo "green" > /etc/edu_theme ;; 3|03) echo "purple" > /etc/edu_theme ;; 4|04) echo "red" > /etc/edu_theme ;; 5|05) echo "gold" > /etc/edu_theme ;;
         6|06) echo "ocean" > /etc/edu_theme ;; 7|07) echo "retro" > /etc/edu_theme ;; 8|08) echo "mono" > /etc/edu_theme ;; 9|09) echo "dracula" > /etc/edu_theme ;; 10) echo "nord" > /etc/edu_theme ;;
         11) echo "solar" > /etc/edu_theme ;; 12) echo "gruvbox" > /etc/edu_theme ;; 13) echo "synth" > /etc/edu_theme ;; 14) echo "toxic" > /etc/edu_theme ;; 15) echo "royal" > /etc/edu_theme ;;
-        16) echo "standard" > /etc/edu_font ;; 17) echo "big" > /etc/edu_font ;; 18) echo "slant" > /etc/edu_font ;; 19) echo "banner" > /etc/edu_font ;; 0) menu ;;
+        
+        21) echo "normal" > /etc/edu_ufont ;; 22) echo "mono" > /etc/edu_ufont ;; 23) echo "double" > /etc/edu_ufont ;; 
+        24) echo "fraktur" > /etc/edu_ufont ;; 25) echo "script" > /etc/edu_ufont ;; 26) echo "small" > /etc/edu_ufont ;; 
+        27) echo "bold_script" > /etc/edu_ufont ;;
+        
+        31) echo "banner" > /etc/edu_scope ;; 32) echo "all" > /etc/edu_scope ;;
+        0) menu ;;
     esac
     echo -e "${C_SUCCESS}Updating Visuals...${RESET}"; sleep 1; exec "$0"
 }
@@ -354,56 +369,59 @@ function auto_backup() {
 }
 
 # =========================================================
-# 8. DASHBOARD & MENU
+# 8. DASHBOARD
 # =========================================================
 
 function show_dashboard() {
     RAM_TOTAL=$(free -m | awk 'NR==2{print $2}'); RAM_USED=$(free -m | awk 'NR==2{print $3}'); RAM_PCT=$(echo "$RAM_USED / $RAM_TOTAL * 100" | bc -l | awk '{printf("%d",$1)}')
     LOAD=$(uptime | awk -F'load average:' '{ print $2 }' | cut -d, -f1 | tr -d ' '); LOAD_PCT=$(echo "$LOAD * 100 / 4" | bc -l | awk '{printf("%d",$1)}'); if [ "$LOAD_PCT" -gt 100 ]; then LOAD_PCT=100; fi
-    SERVER_TIME=$(date "+%H:%M:%S"); LAST_LOGIN=$(last -n 1 -a | head -n 1 | awk '{print $10}'); CURr_FONT=$(cat /etc/edu_font 2>/dev/null || echo "standard")
+    SERVER_TIME=$(date "+%H:%M:%S"); LAST_LOGIN=$(last -n 1 -a | head -n 1 | awk '{print $10}')
     if systemctl is-active --quiet ssh; then S_SSH="${C_SUCCESS}ONLINE${RESET}"; else S_SSH="${C_ALERT}OFFLINE${RESET}"; fi
     if systemctl is-active --quiet xray; then S_XRAY="${C_SUCCESS}ONLINE${RESET}"; else S_XRAY="${C_ALERT}OFFLINE${RESET}"; fi
     if systemctl is-active --quiet nginx; then S_NGINX="${C_SUCCESS}ONLINE${RESET}"; else S_NGINX="${C_ALERT}OFFLINE${RESET}"; fi
-    clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    if command -v figlet &> /dev/null; then echo -e "${C_TEXT}"; figlet -f "$CURr_FONT" "EDUFWESH"; echo -e "${RESET}"; else echo -e "${C_TEXT}  EDUFWESH ENTERPRISE MANAGER${RESET}"; fi
+
+    clear
     echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "Host" "$DOMAIN" "Time" "$SERVER_TIME"
-    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "IP" "$MYIP" "ISP" "$ISP"
-    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "NS" "$NS_DOMAIN" "Sec" "$LAST_LOGIN"
+    echo -e "${C_TEXT}  $T_HEADER${RESET}            ${C_LABEL}v17.0 ULT${RESET}"
+    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "$L_HOST" "$DOMAIN" "$L_TIME" "$SERVER_TIME"
+    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "$L_IP" "$MYIP" "$L_ISP" "$ISP"
+    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "$L_NS" "$NS_DOMAIN" "$L_SEC" "$LAST_LOGIN"
     echo -e "${C_LABEL}──────────────────────────────────────────────────────────${RESET}"
-    echo -ne "  ${C_LABEL}RAM :${RESET} "; draw_bar $RAM_PCT; echo ""
-    echo -ne "  ${C_LABEL}CPU :${RESET} "; draw_bar $LOAD_PCT; echo ""
-    echo -e ""; echo -e "  ${C_LABEL}SSH :${RESET} $S_SSH       ${C_LABEL}XRAY :${RESET} $S_XRAY      ${C_LABEL}WEB :${RESET} $S_NGINX"
+    echo -ne "  ${C_LABEL}$L_RAM :${RESET} "; draw_bar $RAM_PCT; echo ""
+    echo -ne "  ${C_LABEL}$L_CPU :${RESET} "; draw_bar $LOAD_PCT; echo ""
+    echo -e ""; echo -e "  ${C_LABEL}$L_SSH :${RESET} $S_SSH       ${C_LABEL}$L_XRAY :${RESET} $S_XRAY      ${C_LABEL}$L_WEB :${RESET} $S_NGINX"
     echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 }
 
 function show_menu() {
     show_dashboard
-    echo -e "  ${C_ACCENT}USER MANAGEMENT${RESET}"
+    echo -e "  ${C_ACCENT}$T_U_MGMT${RESET}"
     echo -e "  [01] Create User Account   [04] Monitor Users"
     echo -e "  [02] Create Xray Account   [05] List Active Users"
     echo -e "  [03] Renew User Services   [06] List Expired"
     echo -e "  [07] Lock/Unlock User"
     echo -e ""
-    echo -e "  ${C_ACCENT}SERVER OPERATIONS${RESET}"
+    echo -e "  ${C_ACCENT}$T_S_OPS${RESET}"
     echo -e "  [08] System Diagnostics    [12] Restart Services"
     echo -e "  [09] Speedtest Benchmark   [13] Auto-Reboot Task"
     echo -e "  [10] Reboot Server         [14] Manual Backup"
     echo -e "  [11] Clear RAM Cache       [15] Restore Backup"
     echo -e ""
-    echo -e "  ${C_ACCENT}CONFIGURATION & CLOUD${RESET}"
+    echo -e "  ${C_ACCENT}$T_CONFIG${RESET}"
     echo -e "  [16] Update Domain Host    [20] ${C_TEXT}Live Traffic Monitor${RESET}"
     echo -e "  [17] Update NameServer     [21] ${C_TEXT}User ID Card Gen${RESET}"
     echo -e "  [18] SSH Banner Editor     [22] ${C_TEXT}Settings (Theme/UI)${RESET}"
     echo -e "  [19] Cloud Backup Setup"
     echo -e ""
-    echo -e "  [00] Exit Dashboard"
+    echo -e "  [00] $T_EXIT"
     echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     read -p "  Enter Selection » " opt
+
     case $opt in
         01|1) clear; start_backup_watchdog; usernew ;;
-        02|2) create_account_selector ;; # RESTORED SELECTOR
-        03|3) renew_selector ;; # RESTORED SELECTOR
+        02|2) create_account_selector ;;
+        03|3) renew_selector ;;
         04|4) clear; cek ;;
         05|5) list_active ;;
         06|6) list_expired ;;
@@ -417,7 +435,7 @@ function show_menu() {
         14|14) auto_backup "force"; menu ;;
         15|15) restore_configs ;;
         16|16) change_domain ;;
-        17|17) change_ns ;; # FIXED (Updates both files)
+        17|17) change_ns ;;
         18|18) change_banner ;;
         19|19) backup_settings ;;
         20|20) live_traffic_monitor ;;
