@@ -2,7 +2,7 @@
 
 # =========================================================
 # EDUFWESH MANAGER - ULTIMATE ENTERPRISE v17.0
-# (Features: Unicode Fonts, Data Monitor, Pro Themes)
+# (Features: Unicode Fonts, Daily/Monthly Data, Pro Themes)
 # =========================================================
 
 # --- 1. VISUAL PREFERENCES ENGINE ---
@@ -34,7 +34,8 @@ L_IP="IP"
 L_ISP="ISP"
 L_NS="NS"
 L_SEC="Sec"
-L_DATA="Data"  # <--- NEW LABEL
+L_DAY="Daily"    # <--- NEW
+L_MONTH="Monthly" # <--- NEW
 L_RAM="RAM"
 L_CPU="CPU"
 L_SSH="SSH"
@@ -47,73 +48,85 @@ case $CURr_UFONT in
         T_HEADER="𝙴𝙳𝚄𝙵𝚆𝙴𝚂𝙷 𝙴𝙽𝚃𝙴𝚁𝙿𝚁𝙸𝚂𝙴 𝙼𝙰𝙽𝙰𝙶𝙴𝚁"; T_U_MGMT="𝚄𝚂𝙴𝚁 𝙼𝙰𝙽𝙰𝙶𝙴𝙼𝙴𝙽𝚃"
         T_S_OPS="𝚂𝙴𝚁𝚅𝙴𝚁 𝙾𝙿𝙴𝚁𝙰𝚃𝙸𝙾𝙽𝚂"; T_CONFIG="𝙲𝙾𝙽𝙵𝙸𝙶𝚄𝚁𝙰𝚃𝙸𝙾𝙽 & 𝙲𝙻𝙾𝚄𝙳"
         T_EXIT="𝙴𝚡𝚒𝚝 𝙳𝚊𝚜𝚑𝚋𝚘𝚊𝚛𝚍"
-        L_HOST="𝙷𝚘𝚜𝚝"; L_TIME="𝚃𝚒𝚖𝚎"; L_IP="𝙸𝙿"; L_ISP="𝙸𝚂𝙿"; L_NS="𝙽𝚂"; L_SEC="𝚂𝚎𝚌"; L_DATA="𝙳𝚊𝚝𝚊"
+        L_HOST="𝙷𝚘𝚜𝚝"; L_TIME="𝚃𝚒𝚖𝚎"; L_IP="𝙸𝙿"; L_ISP="𝙸𝚂𝙿"; L_NS="𝙽𝚂"; L_SEC="𝚂𝚎𝚌"
+        L_DAY="𝙳𝚊𝚒𝚕𝚢"; L_MONTH="𝙼𝚘𝚗𝚝𝚑"
         L_RAM="𝚁𝙰𝙼"; L_CPU="𝙲𝙿𝚄"; L_SSH="𝚂𝚂𝙷"; L_XRAY="𝚇𝚁𝙰𝚈"; L_WEB="𝚆𝙴𝙱" ;;
     "fraktur") # 𝕳𝖊𝖑𝖑𝖔
         T_HEADER="𝕰𝕯𝖀𝕱𝖂𝕰𝕾𝕳 𝕰𝕹𝕿𝕰𝕽𝕻𝕽𝕴𝕾𝕰 𝕸𝕬𝕹𝕬𝕲𝕰𝕽"; T_U_MGMT="𝖀𝕾𝕰𝕽 𝕸𝕬𝕹𝕬𝕲𝕰𝕸𝕰𝕹𝕿"
         T_S_OPS="𝕾𝕰𝕽𝖁𝕰𝕽 𝕺𝕻𝕰𝕽𝕬𝕿𝕴𝕺𝕹𝕾"; T_CONFIG="𝕮𝕺𝕹𝕱𝕴𝕲𝖀𝕽𝕬𝕿𝕴𝕺𝕹 & 𝕮𝕷𝕺𝖀𝕯"
         T_EXIT="𝕰𝖝𝖎𝖙 𝕯𝖆𝖘𝖍𝖇𝖔𝖆𝖗𝖉"
-        L_HOST="𝕳𝖔𝖘𝖙"; L_TIME="𝕿𝖎𝖒𝖊"; L_IP="𝕴𝕻"; L_ISP="𝕴𝕾𝕻"; L_NS="𝕹𝕾"; L_SEC="𝕾𝖊𝖈"; L_DATA="𝕯𝖆𝖙𝖆"
+        L_HOST="𝕳𝖔𝖘𝖙"; L_TIME="𝕿𝖎𝖒𝖊"; L_IP="𝕴𝕻"; L_ISP="𝕴𝕾𝕻"; L_NS="𝕹𝕾"; L_SEC="𝕾𝖊𝖈"
+        L_DAY="𝕯𝖆𝖎𝖑𝖞"; L_MONTH="𝕸𝖔𝖓𝖙𝖍"
         L_RAM="𝕽𝕬𝕸"; L_CPU="𝕮𝕻𝖀"; L_SSH="𝕾𝕾𝕳"; L_XRAY="𝖃𝕽𝕬𝖄"; L_WEB="𝖂𝕰𝕭" ;;
     "script") # ℋ𝒾
         T_HEADER="ℰ𝒟𝒰ℱ𝒲ℰ𝒮ℋ ℰ𝒩𝒯ℰℛ𝒫ℛℐ𝒮ℰ ℳ𝒜𝒩𝒜𝒢ℰℛ"; T_U_MGMT="𝒰𝒮ℰℛ ℳ𝒜𝒩𝒜𝒢ℰℳℰ𝒩𝒯"
         T_S_OPS="𝒮ℰℛ𝒱ℰℛ 𝒪𝒫ℰℛ𝒜𝒯ℐ𝒪𝒩𝒮"; T_CONFIG="𝒞𝒪𝒩ℱℐ𝒢𝒰ℛ𝒜𝒯ℐ𝒪𝒩 & 𝒞ℒ𝒪𝒰𝒟"
         T_EXIT="ℰ𝓍𝒾𝓉 𝒟𝒶𝓈𝒽𝒷ℴ𝒶𝓇𝒹"
-        L_HOST="ℋℴ𝓈𝓉"; L_TIME="𝒯𝒾𝓂ℯ"; L_IP="ℐ𝒫"; L_ISP="ℐ𝒮𝒫"; L_NS="𝒩𝒮"; L_SEC="𝒮ℯ𝒸"; L_DATA="𝒟𝒶𝓉𝒶"
+        L_HOST="ℋℴ𝓈𝓉"; L_TIME="𝒯𝒾𝓂ℯ"; L_IP="ℐ𝒫"; L_ISP="ℐ𝒮𝒫"; L_NS="𝒩𝒮"; L_SEC="𝒮ℯ𝒸"
+        L_DAY="𝒟𝒶𝒾𝓁𝓎"; L_MONTH="ℳℴ𝓃𝓉𝒽"
         L_RAM="ℛ𝒜ℳ"; L_CPU="𝒞𝒫𝒰"; L_SSH="𝒮𝒮ℋ"; L_XRAY="𝒳ℛ𝒜𝒴"; L_WEB="𝒲ℰℬ" ;;
     "double") # ℍ𝕖𝕝𝕝𝕠
         T_HEADER="𝔼𝔻𝕌𝔽𝕎𝔼𝕊ℍ 𝔼ℕ𝕋𝔼ℝℙℝ𝕀𝕊𝔼 𝕄𝔸ℕ𝔸𝔾𝔼ℝ"; T_U_MGMT="𝕌𝕊𝔼ℝ 𝕄𝔸ℕ𝔸𝔾𝔼𝕄𝔼ℕ𝕋"
         T_S_OPS="𝕊𝔼ℝ𝕍𝔼ℝ 𝕆ℙ𝔼ℝ𝔸𝕋𝕀𝕆ℕ𝕊"; T_CONFIG="ℂ𝕆ℕ𝔽𝕀𝔾𝕌ℝ𝔸𝕋𝕀𝕆ℕ & ℂ𝕃𝕆𝕌𝔻"
         T_EXIT="𝔼𝕩𝕚𝕥 𝔻𝕒𝕤𝕙𝕓𝕠𝕒𝕣𝕕"
-        L_HOST="ℍ𝕠𝕤𝕥"; L_TIME="𝕋𝕚𝕞𝕖"; L_IP="𝕀ℙ"; L_ISP="𝕀𝕊ℙ"; L_NS="ℕ𝕊"; L_SEC="𝕊𝕖𝕔"; L_DATA="𝔻𝕒𝕥𝕒"
+        L_HOST="ℍ𝕠𝕤𝕥"; L_TIME="𝕋𝕚𝕞𝕖"; L_IP="𝕀ℙ"; L_ISP="𝕀𝕊ℙ"; L_NS="ℕ𝕊"; L_SEC="𝕊𝕖𝕔"
+        L_DAY="𝔻𝕒𝕚𝕝𝕪"; L_MONTH="𝕄𝕠𝕟𝕥𝕙"
         L_RAM="ℝ𝔸𝕄"; L_CPU="ℂℙ𝕌"; L_SSH="𝕊𝕊ℍ"; L_XRAY="𝕏ℝ𝔸𝕐"; L_WEB="𝕎𝔼𝔹" ;;
     "bold_script") # 𝓗𝓲
         T_HEADER="𝓔𝓓𝓤𝓕𝓦𝓔𝓢𝓗 𝓔𝓝𝓣𝓔𝓡𝓟𝓡𝓘𝓢𝓔 𝓜𝓐𝓝𝓐𝓖𝓔𝓡"; T_U_MGMT="𝓤𝓢𝓔𝓡 𝓜𝓐𝓝𝓐𝓖𝓔𝓜𝓔𝓝𝓣"
         T_S_OPS="𝓢𝓔𝓡𝓥𝓔𝓡 𝓞𝓟𝓔𝓡𝓐𝓣𝓘𝓞𝓝𝓢"; T_CONFIG="𝓒𝓞𝓝𝓕𝓘𝓖𝓤𝓡𝓐𝓣𝓘𝓞𝓝 & 𝓒𝓛𝓞𝓤𝓓"
         T_EXIT="𝓔𝔁𝓲𝓽 𝓓𝓪𝓼𝓱𝓫𝓸𝓪𝓻𝓭"
-        L_HOST="𝓗𝓸𝓼𝓽"; L_TIME="𝓣𝓲𝓶𝓮"; L_IP="𝓘𝓟"; L_ISP="𝓘𝓢𝓟"; L_NS="𝓝𝓢"; L_SEC="𝓢𝓮𝓬"; L_DATA="𝓓𝓪𝓽𝓪"
+        L_HOST="𝓗𝓸𝓼𝓽"; L_TIME="𝓣𝓲𝓶𝓮"; L_IP="𝓘𝓟"; L_ISP="𝓘𝓢𝓟"; L_NS="𝓝𝓢"; L_SEC="𝓢𝓮𝓬"
+        L_DAY="𝓓𝓪𝓲𝓵𝔂"; L_MONTH="𝓜𝓸𝓷𝓽𝓱"
         L_RAM="𝓡𝓐𝓜"; L_CPU="𝓒𝓟𝓤"; L_SSH="𝓢𝓢𝓗"; L_XRAY="𝓧𝓡𝓐𝓨"; L_WEB="𝓦𝓔𝓑" ;;
     "small") # ʜᴇʟʟᴏ
         T_HEADER="ᴇᴅᴜғᴡᴇsʜ ᴇɴᴛᴇʀᴘʀɪsᴇ ᴍᴀɴᴀɢᴇʀ"; T_U_MGMT="ᴜsᴇʀ ᴍᴀɴᴀɢᴇᴍᴇɴᴛ"
         T_S_OPS="sᴇʀᴠᴇʀ ᴏᴘᴇʀᴀᴛɪᴏɴs"; T_CONFIG="ᴄᴏɴғɪɢᴜʀᴀᴛɪᴏɴ & ᴄʟᴏᴜᴅ"
         T_EXIT="ᴇxɪᴛ ᴅᴀsʜʙᴏᴀʀᴅ"
-        L_HOST="ʜᴏsᴛ"; L_TIME="ᴛɪᴍᴇ"; L_IP="ɪᴘ"; L_ISP="ɪsᴘ"; L_NS="ɴs"; L_SEC="sᴇᴄ"; L_DATA="ᴅᴀᴛᴀ"
+        L_HOST="ʜᴏsᴛ"; L_TIME="ᴛɪᴍᴇ"; L_IP="ɪᴘ"; L_ISP="ɪsᴘ"; L_NS="ɴs"; L_SEC="sᴇᴄ"
+        L_DAY="ᴅᴀɪʟʏ"; L_MONTH="ᴍᴏɴᴛʜ"
         L_RAM="ʀᴀᴍ"; L_CPU="ᴄᴘᴜ"; L_SSH="ssʜ"; L_XRAY="xʀᴀʏ"; L_WEB="ᴡᴇʙ" ;;
     "squared") # 🄷🄸
         T_HEADER="🄴🄳🅄🄵🅆🄴🅂🄷 🄴🄽🅃🄴🅁🄿🅁🄸🅂🄴 🄼🄰🄽🄰🄶🄴🅁"; T_U_MGMT="🅄🅂🄴🅁 🄼🄰🄽🄰🄶🄴🄼🄴🄽🅃"
         T_S_OPS="🅂🄴🅁🅅🄴🅁 🄾🄿🄴🅁🄰🅃🄸🄾🄽🅂"; T_CONFIG="🄲🄾🄽🄵🄸🄶🅄🅁🄰🅃🄸🄾🄽 & 🄲🄻🄾🅄🄳"
         T_EXIT="🄴🅇🄸🅃 🄳🄰🅂🄷🄱🄾🄰🅁🄳"
-        L_HOST="🄷🄾🅂🅃"; L_TIME="🅃🄸🄼🄴"; L_IP="🄸🄿"; L_ISP="🄸🅂🄿"; L_NS="🄽🅂"; L_SEC="🅂🄴🄲"; L_DATA="🄳🄰🅃🄰"
+        L_HOST="🄷🄾🅂🅃"; L_TIME="🅃🄸🄼🄴"; L_IP="🄸🄿"; L_ISP="🄸🅂🄿"; L_NS="🄽🅂"; L_SEC="🅂🄴🄲"
+        L_DAY="🄳🄰🄸🄻🅈"; L_MONTH="🄼🄾🄽🅃🄷"
         L_RAM="🅁🄰🄼"; L_CPU="🄲🄿🅄"; L_SSH="🅂🅂🄷"; L_XRAY="🅇🅁🄰🅈"; L_WEB="🅆🄴🄱" ;;
     "bubble") # Ⓗⓘ
         T_HEADER="ⒺⒹⓊⒻⓌⒺⓈⒽ ⒺⓃⓉⒺⓇⓅⓇⒾⓈⒺ ⓂⒶⓃⒶⒼⒺⓇ"; T_U_MGMT="ⓊⓈⒺⓇ ⓂⒶⓃⒶⒼⒺⓂⒺⓃⓉ"
         T_S_OPS="ⓈⒺⓇⓋⒺⓇ ⓄⓅⒺⓇⒶⓉⒾⓄⓃⓈ"; T_CONFIG="ⒸⓄⓃⒻⒾⒼⓊⓇⒶⓉⒾⓄⓃ & ⒸⓁⓄⓊⒹ"
         T_EXIT="Ⓔⓧⓘⓣ Ⓓⓐⓢⓗⓑⓞⓐⓡⓓ"
-        L_HOST="Ⓗⓞⓢⓣ"; L_TIME="Ⓣⓘⓜⓔ"; L_IP="ⒾⓅ"; L_ISP="ⒾⓈⓅ"; L_NS="ⓃⓈ"; L_SEC="Ⓢⓔⓒ"; L_DATA="Ⓓⓐⓣⓐ"
+        L_HOST="Ⓗⓞⓢⓣ"; L_TIME="Ⓣⓘⓜⓔ"; L_IP="ⒾⓅ"; L_ISP="ⒾⓈⓅ"; L_NS="ⓃⓈ"; L_SEC="Ⓢⓔⓒ"
+        L_DAY="Ⓓⓐⓘⓛⓨ"; L_MONTH="Ⓜⓞⓝⓣⓗ"
         L_RAM="ⓇⒶⓂ"; L_CPU="ⒸⓅⓊ"; L_SSH="ⓈⓈⒽ"; L_XRAY="ⓍⓇⒶⓎ"; L_WEB="ⓌⒺⒷ" ;;
     "wide") # Ｈｉ
         T_HEADER="ＥＤＵＦＷＥＳＨ ＥＮＴＥＲＰＲＩＳＥ ＭＡＮＡＧＥＲ"; T_U_MGMT="ＵＳＥＲ ＭＡＮＡＧＥＭＥＮＴ"
         T_S_OPS="ＳＥＲＶＥＲ ＯＰＥＲＡＴＩＯＮＳ"; T_CONFIG="ＣＯＮＦＩＧＵＲＡＴＩＯＮ ＆ ＣＬＯＵＤ"
         T_EXIT="Ｅｘｉｔ Ｄａｓｈｂｏａｒｄ"
-        L_HOST="Ｈｏｓｔ"; L_TIME="Ｔｉｍｅ"; L_IP="ＩＰ"; L_ISP="ＩＳＰ"; L_NS="ＮＳ"; L_SEC="Ｓｅｃ"; L_DATA="Ｄａｔａ"
+        L_HOST="Ｈｏｓｔ"; L_TIME="Ｔｉｍｅ"; L_IP="ＩＰ"; L_ISP="ＩＳＰ"; L_NS="ＮＳ"; L_SEC="Ｓｅｃ"
+        L_DAY="Ｄａｉｌｙ"; L_MONTH="Ｍｏｎｔｈ"
         L_RAM="ＲＡＭ"; L_CPU="ＣＰＵ"; L_SSH="ＳＳＨ"; L_XRAY="ＸＲＡＹ"; L_WEB="ＷＥＢ" ;;
     "serif_bold") # 𝐇𝐢
         T_HEADER="𝐄𝐃𝐔𝐅𝐖𝐄𝐒𝐇 𝐄𝐍𝐓𝐄𝐑𝐏𝐑𝐈𝐒𝐄 𝐌𝐀𝐍𝐀𝐆𝐄𝐑"; T_U_MGMT="𝐔𝐒𝐄𝐑 𝐌𝐀𝐍𝐀𝐆𝐄𝐌𝐄𝐍𝐓"
         T_S_OPS="𝐒𝐄𝐑𝐕𝐄𝐑 𝐎𝐏𝐄𝐑𝐀𝐓𝐈𝐎𝐍𝐒"; T_CONFIG="𝐂𝐎𝐍𝐅𝐈𝐆𝐔𝐑𝐀𝐓𝐈𝐎𝐍 & 𝐂𝐋𝐎𝐔𝐃"
         T_EXIT="𝐄𝐱𝐢𝐭 𝐃𝐚𝐬𝐡𝐛𝐨𝐚𝐫𝐝"
-        L_HOST="𝐇𝐨𝐬𝐭"; L_TIME="𝐓𝐢𝐦𝐞"; L_IP="𝐈𝐏"; L_ISP="𝐈𝐒𝐏"; L_NS="𝐍𝐒"; L_SEC="𝐒𝐞𝐜"; L_DATA="𝐃𝐚𝐭𝐚"
+        L_HOST="𝐇𝐨𝐬𝐭"; L_TIME="𝐓𝐢𝐦𝐞"; L_IP="𝐈𝐏"; L_ISP="𝐈𝐒𝐏"; L_NS="𝐍𝐒"; L_SEC="𝐒𝐞𝐜"
+        L_DAY="𝐃𝐚𝐢𝐥𝐲"; L_MONTH="𝐌𝐨𝐧𝐭𝐡"
         L_RAM="𝐑𝐀𝐌"; L_CPU="𝐂𝐏𝐔"; L_SSH="𝐒𝐒𝐇"; L_XRAY="𝐗𝐑𝐀𝐘"; L_WEB="𝐖𝐄𝐁" ;;
     "sans_bold") # 𝗛𝗶
         T_HEADER="𝗘𝗗𝗨𝗙𝗪𝗘𝗦𝗛 𝗘𝗡𝗧𝗘𝗥𝗣𝗥𝗜𝗦𝗘 𝗠𝗔𝗡𝗔𝗚𝗘𝗥"; T_U_MGMT="𝗨𝗦𝗘𝗥 𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡𝗧"
-        T_S_OPS="𝗦𝗘𝗥𝗩𝗘𝗥 𝗢𝗣𝗘𝗥𝐀𝐓𝗜𝗢𝗡𝗦"; T_CONFIG="𝗖𝗢𝗡𝗙𝗜Ｇ𝗨𝗥𝗔𝗧𝗜𝗢Ｎ & 𝗖𝗟𝗢𝐔𝗗"
+        T_S_OPS="𝗦𝗘𝗥𝗩𝗘𝗥 𝗢𝗣𝗘𝗥𝐀𝐓𝗜𝗢𝗡𝗦"; T_CONFIG="𝗖𝗢𝗡𝗙𝗜ＧＵＲＡＴＩ𝗢Ｎ & 𝗖𝗟𝗢𝐔𝗗"
         T_EXIT="𝗘𝘅𝗶𝘁 𝗗𝗮𝘀𝗵𝗯𝗼𝗮𝗿𝗱"
-        L_HOST="𝗛𝗼𝘀𝘁"; L_TIME="𝗧𝗶𝗺𝗲"; L_IP="𝗜𝗣"; L_ISP="𝗜𝗦𝗣"; L_NS="𝗡𝗦"; L_SEC="𝗦𝗲𝗰"; L_DATA="𝗗𝗮𝘁𝗮"
+        L_HOST="𝗛𝗼𝘀𝘁"; L_TIME="𝗧𝗶𝗺𝗲"; L_IP="𝗜𝗣"; L_ISP="𝗜𝗦𝗣"; L_NS="𝗡𝗦"; L_SEC="𝗦𝗲𝗰"
+        L_DAY="𝗗𝗮𝗶𝗹𝘆"; L_MONTH="𝗠𝗼𝗻𝘁𝗵"
         L_RAM="𝗥𝗔𝗠"; L_CPU="𝗖𝗣𝗨"; L_SSH="𝗦𝗦Ｈ"; L_XRAY="𝗫𝗥𝗔𝗬"; L_WEB="𝗪𝗘𝗕" ;;
     "italic") # 𝐻𝑖
         T_HEADER="𝐸𝐷𝑈𝐹𝑊𝐸𝑆𝐻 𝐸𝑁𝑇𝐸𝑅𝑃𝑅𝐼𝑆𝐸 𝑀𝐴𝑁𝐴𝐺𝐸𝑅"; T_U_MGMT="𝑈𝑆𝐸𝑅 𝑀𝐴𝑁𝐴𝐺𝐸𝑀𝐸𝑁𝑇"
         T_S_OPS="𝑆𝐸𝑅𝑉𝐸𝑅 𝑂𝑃𝐸𝑅𝐴𝑇𝐼𝑂𝑁𝑆"; T_CONFIG="𝐶𝑂𝑁𝐹𝐼𝐺𝑈𝑅𝐴𝑇𝐼𝑂𝑁 & 𝐶𝐿𝑂𝑈𝐷"
         T_EXIT="𝐸𝑥𝑖𝑡 𝐷𝑎𝑠ℎ𝑏ｏａ𝑟𝑑"
-        L_HOST="𝐻𝑜𝑠𝑡"; L_TIME="𝑇𝑖𝑚𝑒"; L_IP="𝐼𝑃"; L_ISP="𝐼𝑆𝑃"; L_NS="𝑁𝑆"; L_SEC="𝑆𝑒𝑐"; L_DATA="𝐷𝑎𝑡𝑎"
+        L_HOST="𝐻𝑜𝑠𝑡"; L_TIME="𝑇𝑖𝑚𝑒"; L_IP="𝐼𝑃"; L_ISP="𝐼𝑆𝑃"; L_NS="𝑁𝑆"; L_SEC="𝑆𝑒𝑐"
+        L_DAY="𝐷𝑎𝑖𝑙𝑦"; L_MONTH="𝑀𝑜𝑛𝑡ℎ"
         L_RAM="𝑅𝐴𝑀"; L_CPU="𝐶𝑃𝑈"; L_SSH="𝑆𝑆Ｈ"; L_XRAY="𝑋𝑅𝐴𝑌"; L_WEB="𝑊𝐸𝐵" ;;
 esac
 
@@ -124,7 +137,8 @@ if [[ "$CURr_SCOPE" == "banner" ]]; then
     T_S_OPS="SERVER OPERATIONS"
     T_CONFIG="CONFIGURATION & CLOUD"
     T_EXIT="Exit Dashboard"
-    L_HOST="Host"; L_TIME="Time"; L_IP="IP"; L_ISP="ISP"; L_NS="NS"; L_SEC="Sec"; L_DATA="Data"
+    L_HOST="Host"; L_TIME="Time"; L_IP="IP"; L_ISP="ISP"; L_NS="NS"; L_SEC="Sec"
+    L_DAY="Daily"; L_MONTH="Month"
     L_RAM="RAM"; L_CPU="CPU"; L_SSH="SSH"; L_XRAY="XRAY"; L_WEB="WEB"
 fi
 
@@ -151,14 +165,13 @@ RESET='\033[0m'; C_LABEL='\033[0;90m'; C_SUCCESS='\033[1;32m'; C_ALERT='\033[1;9
 
 # --- 2. INITIALIZATION & DEPENDENCIES ---
 function init_sys() {
-    if ! command -v zip &> /dev/null || ! command -v bc &> /dev/null || ! command -v figlet &> /dev/null; then
+    if ! command -v zip &> /dev/null || ! command -v bc &> /dev/null || ! command -v figlet &> /dev/null || ! command -v vnstat &> /dev/null; then
         echo -e "${C_LABEL}Initializing system modules...${RESET}"
         apt-get update >/dev/null 2>&1
         apt-get install zip unzip curl bc net-tools vnstat figlet -y >/dev/null 2>&1
     fi
-    # Check vnstat is running for data monitor
+    # Ensure vnstat interface database exists
     if command -v vnstat &> /dev/null; then
-        # Ensure interface database exists
         IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
         if ! vnstat -i $IFACE &>/dev/null; then
             vnstat -u -i $IFACE >/dev/null 2>&1
@@ -430,21 +443,27 @@ function show_dashboard() {
     if systemctl is-active --quiet xray; then S_XRAY="${C_SUCCESS}ONLINE${RESET}"; else S_XRAY="${C_ALERT}OFFLINE${RESET}"; fi
     if systemctl is-active --quiet nginx; then S_NGINX="${C_SUCCESS}ONLINE${RESET}"; else S_NGINX="${C_ALERT}OFFLINE${RESET}"; fi
 
-    # --- DATA USAGE LOGIC ---
+    # --- UPDATED DATA USAGE LOGIC ---
     IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
+    
+    # Init variables
+    DATA_D="Waiting..."
+    DATA_M="Waiting..."
+
     if command -v vnstat &> /dev/null; then
-        # Try to grep current month from vnstat
-        DT_LINE=$(vnstat -m -i $IFACE | grep "$(date +%b)")
-        if [[ -z "$DT_LINE" ]]; then
-            DATA_DISPLAY="No Data"
-        else
-            # Extract Cols 3+4 (Download) and 5+6 (Upload) - Adjusts based on version but mostly standard
-            D_DL=$(echo "$DT_LINE" | awk '{print $3 " " $4}')
-            D_UP=$(echo "$DT_LINE" | awk '{print $5 " " $6}')
-            DATA_DISPLAY="$D_DL ↓  $D_UP ↑"
-        fi
+        # Force update DB safely
+        vnstat -u -i $IFACE >/dev/null 2>&1
+        
+        # We need distinct Daily and Monthly numbers.
+        # We grep specifically for "today" and the current month name.
+        RAW_D=$(vnstat -d -i $IFACE | grep -w "today" | awk '{print $2 $3 " / " $5 $6}')
+        RAW_M=$(vnstat -m -i $IFACE | grep -w "$(date +%b)" | awk '{print $3 $4 " / " $6 $7}')
+        
+        if [[ -n "$RAW_D" ]]; then DATA_D="$RAW_D"; else DATA_D="No Data"; fi
+        if [[ -n "$RAW_M" ]]; then DATA_M="$RAW_M"; else DATA_M="No Data"; fi
     else
-        DATA_DISPLAY="vnstat missing"
+        DATA_D="Not Installed"
+        DATA_M="Not Installed"
     fi
 
     clear
@@ -454,7 +473,8 @@ function show_dashboard() {
     printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "$L_HOST" "$DOMAIN" "$L_TIME" "$SERVER_TIME"
     printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "$L_IP" "$MYIP" "$L_ISP" "$ISP"
     printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "$L_NS" "$NS_DOMAIN" "$L_SEC" "$LAST_LOGIN"
-    printf "  ${C_LABEL}%-5s:${RESET} %s\n" "$L_DATA" "$DATA_DISPLAY"
+    echo -e "${C_LABEL}──────────────────────────────────────────────────────────${RESET}"
+    printf "  ${C_LABEL}%-8s:${RESET} ${C_ACCENT}%-20s${RESET} ${C_LABEL}%-8s:${RESET} ${C_ACCENT}%s${RESET}\n" "$L_DAY" "$DATA_D" "$L_MONTH" "$DATA_M"
     echo -e "${C_LABEL}──────────────────────────────────────────────────────────${RESET}"
     echo -ne "  ${C_LABEL}$L_RAM :${RESET} "; draw_bar $RAM_PCT; echo ""
     echo -ne "  ${C_LABEL}$L_CPU :${RESET} "; draw_bar $LOAD_PCT; echo ""
