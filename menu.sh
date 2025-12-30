@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH MANAGER - ULTIMATE ENTERPRISE v14.2
-# (UI: Enterprise | Logic: 100% Feature Parity with v12.9)
+# EDUFWESH MANAGER - ULTIMATE ENTERPRISE v14.3
+# (UI: Extended Dashboard Header | Logic: v14.2 Core)
 # =========================================================
 
 # --- 1. THEME ENGINE ---
@@ -38,6 +38,12 @@ init_sys
 MYIP=$(wget -qO- icanhazip.com)
 DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
 ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
+
+# --- FIND NAME SERVER (NS) ---
+if [ -f "/etc/xray/dns" ]; then NS_DOMAIN=$(cat /etc/xray/dns);
+elif [ -f "/etc/slowdns/nsdomain" ]; then NS_DOMAIN=$(cat /etc/slowdns/nsdomain);
+elif [ -f "/root/nsdomain" ]; then NS_DOMAIN=$(cat /root/nsdomain);
+else NS_DOMAIN="Not Set"; fi
 
 # =========================================================
 # 3. BACKGROUND WATCHDOG (The "Auto-Backup" Fix)
@@ -347,8 +353,9 @@ function show_dashboard() {
     LOAD_PCT=$(echo "$LOAD * 100 / 4" | bc -l | awk '{printf("%d",$1)}')
     if [ "$LOAD_PCT" -gt 100 ]; then LOAD_PCT=100; fi
 
-    # -- SECURITY AUDIT --
-    LAST_LOGIN=$(last -n 1 -a | head -n 1 | awk '{print $1 " from " $10}')
+    # -- SECURITY AUDIT & TIME --
+    SERVER_TIME=$(date "+%H:%M:%S")
+    LAST_LOGIN=$(last -n 1 -a | head -n 1 | awk '{print $10 " (" $3 ")"}') # Shortened for layout
     
     # -- SERVICE CHECK --
     if systemctl is-active --quiet ssh; then S_SSH="${C_SUCCESS}ONLINE${RESET}"; else S_SSH="${C_ALERT}OFFLINE${RESET}"; fi
@@ -357,10 +364,12 @@ function show_dashboard() {
 
     clear
     echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${C_TEXT}  EDUFWESH ENTERPRISE MANAGER${RESET}            ${C_LABEL}v14.2 ULT${RESET}"
+    echo -e "${C_TEXT}  EDUFWESH ENTERPRISE MANAGER${RESET}            ${C_LABEL}v14.3 ULT${RESET}"
     echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "  ${C_LABEL}Host:${RESET} $DOMAIN"
-    echo -e "  ${C_LABEL}Sec :${RESET} Last login: $LAST_LOGIN"
+    # -- UPDATED HEADER LAYOUT --
+    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "Host" "$DOMAIN" "Time" "$SERVER_TIME"
+    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "IP" "$MYIP" "ISP" "$ISP"
+    printf "  ${C_LABEL}%-5s:${RESET} %-25s ${C_LABEL}%-5s:${RESET} %s\n" "NS" "$NS_DOMAIN" "Sec" "$LAST_LOGIN"
     echo -e "${C_LABEL}──────────────────────────────────────────────────────────${RESET}"
     
     # -- VISUAL GAUGES --
@@ -402,17 +411,17 @@ function show_menu() {
         05|5) list_active ;;
         06|6) list_expired ;;
         07|7) clear; member ;;
-        08|8) detailed_status ;; # Restored Detail View
+        08|8) detailed_status ;;
         09|9) clear; speedtest ;;
         10|10) reboot ;;
         11|11) sync; echo 3 > /proc/sys/vm/drop_caches; menu ;;
         12|12) systemctl restart ssh xray nginx; menu ;;
-        13|13) auto_reboot ;; # Restored Menu
+        13|13) auto_reboot ;;
         14|14) auto_backup "force"; menu ;;
-        15|15) restore_configs ;; # Restored Function
-        16|16) change_domain ;; # Restored Restart Logic
+        15|15) restore_configs ;;
+        16|16) change_domain ;;
         17|17) clear; read -p "New NS: " n; echo "$n" > /etc/xray/dns; menu ;;
-        18|18) change_banner ;; # Restored Restart Logic
+        18|18) change_banner ;;
         19|19) backup_settings ;;
         00|0) exit 0 ;;
         *) menu ;;
@@ -424,4 +433,3 @@ function menu() { show_menu; }
 
 # Start
 show_menu
-
