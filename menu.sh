@@ -2,7 +2,7 @@
 
 # =========================================================
 # EDUFWESH MANAGER - ULTIMATE ENTERPRISE v17.0
-# (Features: Unicode Fonts, Working Data Monitor, Pro Themes)
+# (Features: Universal Data Parsing, Unicode Fonts, Pro Themes)
 # =========================================================
 
 # --- 1. VISUAL PREFERENCES ENGINE ---
@@ -126,7 +126,7 @@ case $CURr_UFONT in
         T_S_OPS="𝑆𝐸𝑅𝑉𝐸𝑅 𝑂𝑃𝐸𝑅𝐴𝑇𝐼𝑂𝑁𝑆"; T_CONFIG="𝐶𝑂𝑁𝐹𝐼𝐺𝑈𝑅𝐴𝑇𝐼𝑂𝑁 & 𝐶𝐿𝑂𝑈𝐷"
         T_EXIT="𝐸𝑥𝑖𝑡 𝐷𝑎𝑠ℎ𝑏ｏａ𝑟ｄ"
         L_HOST="𝐻𝑜𝑠𝑡"; L_TIME="𝑇𝑖𝑚𝑒"; L_IP="𝐼𝑃"; L_ISP="𝐼𝑆𝑃"; L_NS="𝑁𝑆"; L_SEC="𝑆𝑒𝑐"
-        L_DAY="𝐷𝑎𝑖𝑙𝑦"; L_MONTH="𝑀𝑜𝑛𝑡ℎ"
+        L_DAY="𝐷𝑎𝑖𝑙ｙ"; L_MONTH="𝑀𝑜𝑛𝑡ℎ"
         L_RAM="𝑅𝐴𝑀"; L_CPU="𝐶𝑃𝑈"; L_SSH="𝑆𝑆Ｈ"; L_XRAY="𝑋𝑅𝐴𝑌"; L_WEB="𝑊𝐸𝐵" ;;
 esac
 
@@ -170,6 +170,12 @@ function init_sys() {
         apt-get update >/dev/null 2>&1
         apt-get install zip unzip curl bc net-tools vnstat figlet -y >/dev/null 2>&1
         systemctl enable --now vnstat >/dev/null 2>&1
+    fi
+    
+    # PERMISSION FIX: Ensure vnstat can write to its own DB
+    if [ -d "/var/lib/vnstat" ]; then
+        chown -R vnstat:vnstat /var/lib/vnstat >/dev/null 2>&1
+        chmod -R 775 /var/lib/vnstat >/dev/null 2>&1
     fi
 }
 init_sys
@@ -454,14 +460,15 @@ function show_dashboard() {
         # Force Update
         vnstat -u -i $IFACE >/dev/null 2>&1
         
-        # Robust Parsing
-        # grep "today" for daily (v2.x uses "today", v1.x uses date)
-        # We try strict match first, then fallback to last line
+        # Robust Parsing - Supports vnstat v1.x (Date format) and v2.x (ISO format)
+        D_DATE_1=$(date +%Y-%m-%d) # v2.x style
+        D_DATE_2=$(date +%m/%d/%y) # v1.x style
         
-        # 1. Try to get Daily
-        RAW_D=$(vnstat -d -i $IFACE 2>/dev/null | grep -w "today" | awk '{print $2 $3 " / " $5 $6}')
+        # 1. Try to get Daily (grep for 'today' OR date format)
+        RAW_D=$(vnstat -d -i $IFACE 2>/dev/null | grep -E "today|$D_DATE_1|$D_DATE_2" | head -n 1 | awk '{print $2 $3 " / " $5 $6}')
+        
+        # Fallback if grep fails (grab last line)
         if [[ -z "$RAW_D" ]]; then
-             # Fallback for some versions: Grab the last line that isn't empty/header
              RAW_D=$(vnstat -d -i $IFACE 2>/dev/null | tail -n 3 | grep -v "estimated" | tail -n 1 | awk '{print $2 $3 " / " $5 $6}')
         fi
 
