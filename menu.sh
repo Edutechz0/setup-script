@@ -2,7 +2,7 @@
 
 # =========================================================
 # EDUFWESH MANAGER - ULTIMATE ENTERPRISE v17.0
-# (Features: Unicode Fonts, Daily/Monthly Data, Pro Themes)
+# (Features: Unicode Fonts, Working Data Monitor, Pro Themes)
 # =========================================================
 
 # --- 1. VISUAL PREFERENCES ENGINE ---
@@ -34,8 +34,8 @@ L_IP="IP"
 L_ISP="ISP"
 L_NS="NS"
 L_SEC="Sec"
-L_DAY="Daily"    # <--- NEW
-L_MONTH="Monthly" # <--- NEW
+L_DAY="Daily"    
+L_MONTH="Monthly"
 L_RAM="RAM"
 L_CPU="CPU"
 L_SSH="SSH"
@@ -124,7 +124,7 @@ case $CURr_UFONT in
     "italic") # 𝐻𝑖
         T_HEADER="𝐸𝐷𝑈𝐹𝑊𝐸𝑆𝐻 𝐸𝑁𝑇𝐸𝑅𝑃𝑅𝐼𝑆𝐸 𝑀𝐴𝑁𝐴𝐺𝐸𝑅"; T_U_MGMT="𝑈𝑆𝐸𝑅 𝑀𝐴𝑁𝐴𝐺𝐸𝑀𝐸𝑁𝑇"
         T_S_OPS="𝑆𝐸𝑅𝑉𝐸𝑅 𝑂𝑃𝐸𝑅𝐴𝑇𝐼𝑂𝑁𝑆"; T_CONFIG="𝐶𝑂𝑁𝐹𝐼𝐺𝑈𝑅𝐴𝑇𝐼𝑂𝑁 & 𝐶𝐿𝑂𝑈𝐷"
-        T_EXIT="𝐸𝑥𝑖𝑡 𝐷𝑎𝑠ℎ𝑏ｏａ𝑟𝑑"
+        T_EXIT="𝐸𝑥𝑖𝑡 𝐷𝑎𝑠ℎ𝑏ｏａ𝑟ｄ"
         L_HOST="𝐻𝑜𝑠𝑡"; L_TIME="𝑇𝑖𝑚𝑒"; L_IP="𝐼𝑃"; L_ISP="𝐼𝑆𝑃"; L_NS="𝑁𝑆"; L_SEC="𝑆𝑒𝑐"
         L_DAY="𝐷𝑎𝑖𝑙𝑦"; L_MONTH="𝑀𝑜𝑛𝑡ℎ"
         L_RAM="𝑅𝐴𝑀"; L_CPU="𝐶𝑃𝑈"; L_SSH="𝑆𝑆Ｈ"; L_XRAY="𝑋𝑅𝐴𝑌"; L_WEB="𝑊𝐸𝐵" ;;
@@ -169,13 +169,7 @@ function init_sys() {
         echo -e "${C_LABEL}Initializing system modules...${RESET}"
         apt-get update >/dev/null 2>&1
         apt-get install zip unzip curl bc net-tools vnstat figlet -y >/dev/null 2>&1
-    fi
-    # Ensure vnstat interface database exists
-    if command -v vnstat &> /dev/null; then
-        IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
-        if ! vnstat -i $IFACE &>/dev/null; then
-            vnstat -u -i $IFACE >/dev/null 2>&1
-        fi
+        systemctl enable --now vnstat >/dev/null 2>&1
     fi
 }
 init_sys
@@ -443,27 +437,46 @@ function show_dashboard() {
     if systemctl is-active --quiet xray; then S_XRAY="${C_SUCCESS}ONLINE${RESET}"; else S_XRAY="${C_ALERT}OFFLINE${RESET}"; fi
     if systemctl is-active --quiet nginx; then S_NGINX="${C_SUCCESS}ONLINE${RESET}"; else S_NGINX="${C_ALERT}OFFLINE${RESET}"; fi
 
-    # --- UPDATED DATA USAGE LOGIC ---
+    # --- FINALIZED DATA USAGE LOGIC ---
     IFACE=$(ip route get 8.8.8.8 | awk '{print $5; exit}')
     
-    # Init variables
-    DATA_D="Waiting..."
-    DATA_M="Waiting..."
-
+    # AUTO-FIX: Force create vnstat DB if missing (Fixes "No Data")
     if command -v vnstat &> /dev/null; then
-        # Force update DB safely
+        # Check if interface is tracked. If not, add it.
+        # Quiet check to see if database actually has data or exists
+        if ! vnstat -i $IFACE &>/dev/null; then
+             vnstat --add -i $IFACE >/dev/null 2>&1
+             systemctl restart vnstat >/dev/null 2>&1
+             # Wait 1 sec for service to spin up
+             sleep 1
+        fi
+        
+        # Force Update
         vnstat -u -i $IFACE >/dev/null 2>&1
         
-        # We need distinct Daily and Monthly numbers.
-        # We grep specifically for "today" and the current month name.
-        RAW_D=$(vnstat -d -i $IFACE | grep -w "today" | awk '{print $2 $3 " / " $5 $6}')
-        RAW_M=$(vnstat -m -i $IFACE | grep -w "$(date +%b)" | awk '{print $3 $4 " / " $6 $7}')
+        # Robust Parsing
+        # grep "today" for daily (v2.x uses "today", v1.x uses date)
+        # We try strict match first, then fallback to last line
         
-        if [[ -n "$RAW_D" ]]; then DATA_D="$RAW_D"; else DATA_D="No Data"; fi
-        if [[ -n "$RAW_M" ]]; then DATA_M="$RAW_M"; else DATA_M="No Data"; fi
+        # 1. Try to get Daily
+        RAW_D=$(vnstat -d -i $IFACE 2>/dev/null | grep -w "today" | awk '{print $2 $3 " / " $5 $6}')
+        if [[ -z "$RAW_D" ]]; then
+             # Fallback for some versions: Grab the last line that isn't empty/header
+             RAW_D=$(vnstat -d -i $IFACE 2>/dev/null | tail -n 3 | grep -v "estimated" | tail -n 1 | awk '{print $2 $3 " / " $5 $6}')
+        fi
+
+        # 2. Try to get Monthly
+        RAW_M=$(vnstat -m -i $IFACE 2>/dev/null | grep -w "$(date +%b)" | awk '{print $3 $4 " / " $6 $7}')
+        if [[ -z "$RAW_M" ]]; then
+             RAW_M=$(vnstat -m -i $IFACE 2>/dev/null | tail -n 3 | grep -v "estimated" | tail -n 1 | awk '{print $3 $4 " / " $6 $7}')
+        fi
+
+        # Final Formatting
+        if [[ -n "$RAW_D" && "$RAW_D" != "/" ]]; then DATA_D="$RAW_D"; else DATA_D="No Data"; fi
+        if [[ -n "$RAW_M" && "$RAW_M" != "/" ]]; then DATA_M="$RAW_M"; else DATA_M="No Data"; fi
     else
-        DATA_D="Not Installed"
-        DATA_M="Not Installed"
+        DATA_D="Err: No vnStat"
+        DATA_M="Err: No vnStat"
     fi
 
     clear
