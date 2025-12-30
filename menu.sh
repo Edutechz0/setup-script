@@ -2,7 +2,7 @@
 
 # =========================================================
 # EDUFWESH MANAGER - ULTIMATE ENTERPRISE v17.0
-# (Features: 50+ Unicode Fonts, 100 Themes, Font Scope)
+# (Features: Unicode Font Styles, Pro Themes, Font Scope)
 # =========================================================
 
 # --- 1. VISUAL PREFERENCES ENGINE ---
@@ -12,7 +12,7 @@ U_FONT_FILE="/etc/edu_ufont"     # For Fancy Unicode (New)
 SCOPE_FILE="/etc/edu_scope"      # Banner Only vs Full
 
 # Set Defaults
-if [ ! -f "$THEME_FILE" ]; then echo "1" > "$THEME_FILE"; fi # Default Theme 1
+if [ ! -f "$THEME_FILE" ]; then echo "blue" > "$THEME_FILE"; fi
 if [ ! -f "$FONT_FILE" ]; then echo "standard" > "$FONT_FILE"; fi
 if [ ! -f "$U_FONT_FILE" ]; then echo "normal" > "$U_FONT_FILE"; fi
 if [ ! -f "$SCOPE_FILE" ]; then echo "banner" > "$SCOPE_FILE"; fi
@@ -22,8 +22,6 @@ CURr_UFONT=$(cat "$U_FONT_FILE")
 CURr_SCOPE=$(cat "$SCOPE_FILE")
 
 # --- 1.5 UNICODE FONT MAPPING ENGINE ---
-# Mapping standard text to Unicode styles
-
 # Default Texts
 T_HEADER="EDUFWESH ENTERPRISE MANAGER"
 T_U_MGMT="USER MANAGEMENT"
@@ -106,16 +104,16 @@ case $CURr_UFONT in
         L_RAM="𝐑𝐀𝐌"; L_CPU="𝐂𝐏𝐔"; L_SSH="𝐒𝐒𝐇"; L_XRAY="𝐗𝐑𝐀𝐘"; L_WEB="𝐖𝐄𝐁" ;;
     "sans_bold") # 𝗛𝗶
         T_HEADER="𝗘𝗗𝗨𝗙𝗪𝗘𝗦𝗛 𝗘𝗡𝗧𝗘𝗥𝗣𝗥𝗜𝗦𝗘 𝗠𝗔𝗡𝗔𝗚𝗘𝗥"; T_U_MGMT="𝗨𝗦𝗘𝗥 𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡𝗧"
-        T_S_OPS="𝗦𝗘𝗥𝗩𝗘𝗥 𝗢𝗣𝗘𝗥𝗔𝗧𝗜𝗢𝗡𝗦"; T_CONFIG="𝗖𝗢𝗡𝗙𝗜𝗚𝗨𝗥𝗔𝗧𝗜𝗢𝗡 & 𝗖𝗟𝗢𝗨𝗗"
+        T_S_OPS="𝗦𝗘𝗥𝗩𝗘𝗥 𝗢𝗣𝗘𝗥𝐀𝐓𝗜𝗢𝗡𝗦"; T_CONFIG="𝗖𝗢𝗡𝗙𝗜Ｇ𝗨𝗥𝗔𝗧𝗜𝗢𝗡 & 𝗖𝗟𝗢𝐔𝗗"
         T_EXIT="𝗘𝘅𝗶𝘁 𝗗𝗮𝘀𝗵𝗯𝗼𝗮𝗿𝗱"
         L_HOST="𝗛𝗼𝘀𝘁"; L_TIME="𝗧𝗶𝗺𝗲"; L_IP="𝗜𝗣"; L_ISP="𝗜𝗦𝗣"; L_NS="𝗡𝗦"; L_SEC="𝗦𝗲𝗰"
-        L_RAM="𝗥𝗔𝗠"; L_CPU="𝗖𝗣𝗨"; L_SSH="𝗦𝗦𝗛"; L_XRAY="𝗫𝗥𝗔𝗬"; L_WEB="𝗪𝗘𝗕" ;;
+        L_RAM="𝗥𝗔𝗠"; L_CPU="𝗖𝗣𝗨"; L_SSH="𝗦𝗦Ｈ"; L_XRAY="𝗫𝗥𝗔𝗬"; L_WEB="𝗪𝗘𝗕" ;;
     "italic") # 𝐻𝑖
         T_HEADER="𝐸𝐷𝑈𝐹𝑊𝐸𝑆𝐻 𝐸𝑁𝑇𝐸𝑅𝑃𝑅𝐼𝑆𝐸 𝑀𝐴𝑁𝐴𝐺𝐸𝑅"; T_U_MGMT="𝑈𝑆𝐸𝑅 𝑀𝐴𝑁𝐴𝐺𝐸𝑀𝐸𝑁𝑇"
         T_S_OPS="𝑆𝐸𝑅𝑉𝐸𝑅 𝑂𝑃𝐸𝑅𝐴𝑇𝐼𝑂𝑁𝑆"; T_CONFIG="𝐶𝑂𝑁𝐹𝐼𝐺𝑈𝑅𝐴𝑇𝐼𝑂𝑁 & 𝐶𝐿𝑂𝑈𝐷"
-        T_EXIT="𝐸𝑥𝑖𝑡 𝐷𝑎𝑠ℎ𝑏𝑜𝑎𝑟𝑑"
+        T_EXIT="𝐸𝑥𝑖𝑡 𝐷𝑎𝑠ℎ𝑏ｏａ𝑟𝑑"
         L_HOST="𝐻𝑜𝑠𝑡"; L_TIME="𝑇𝑖𝑚𝑒"; L_IP="𝐼𝑃"; L_ISP="𝐼𝑆𝑃"; L_NS="𝑁𝑆"; L_SEC="𝑆𝑒𝑐"
-        L_RAM="𝑅𝐴𝑀"; L_CPU="𝐶𝑃𝑈"; L_SSH="𝑆𝑆𝐻"; L_XRAY="𝑋𝑅𝐴𝑌"; L_WEB="𝑊𝐸𝐵" ;;
+        L_RAM="𝑅𝐴𝑀"; L_CPU="𝐶𝑃𝑈"; L_SSH="𝑆𝑆Ｈ"; L_XRAY="𝑋𝑅𝐴𝑌"; L_WEB="𝑊𝐸𝐵" ;;
 esac
 
 # APPLY SCOPE LOGIC
@@ -129,57 +127,25 @@ if [[ "$CURr_SCOPE" == "banner" ]]; then
     L_RAM="RAM"; L_CPU="CPU"; L_SSH="SSH"; L_XRAY="XRAY"; L_WEB="WEB"
 fi
 
-# --- THEME COLORS (100 OPTIONS) ---
-# Using 256-Color Ansi (38;5;N) for massive variety
-# Logic: Case Match or Default
+# --- THEME COLORS (RESTORED PRO LIST) ---
 case $CURr_THEME in
-    # --- Standard 1-16 ---
-    "1") C_MAIN='\033[1;34m'; C_ACCENT='\033[1;36m'; C_BAR='\033[1;34m' ;; # Blue
-    "2") C_MAIN='\033[1;32m'; C_ACCENT='\033[1;32m'; C_BAR='\033[1;32m' ;; # Green
-    "3") C_MAIN='\033[1;35m'; C_ACCENT='\033[1;36m'; C_BAR='\033[1;35m' ;; # Purple
-    "4") C_MAIN='\033[1;31m'; C_ACCENT='\033[1;33m'; C_BAR='\033[1;31m' ;; # Red
-    "5") C_MAIN='\033[0;33m'; C_ACCENT='\033[1;33m'; C_BAR='\033[0;33m' ;; # Gold
-    "6") C_MAIN='\033[0;36m'; C_ACCENT='\033[1;34m'; C_BAR='\033[0;36m' ;; # Ocean
-    "7") C_MAIN='\033[38;5;208m'; C_ACCENT='\033[38;5;220m'; C_BAR='\033[38;5;208m' ;; # Orange
-    "8") C_MAIN='\033[1;30m'; C_ACCENT='\033[1;37m'; C_BAR='\033[1;37m' ;; # Mono
-    "9") C_MAIN='\033[38;5;93m'; C_ACCENT='\033[38;5;129m'; C_BAR='\033[38;5;93m' ;; # Deep Purple
-    "10") C_MAIN='\033[38;5;39m'; C_ACCENT='\033[38;5;45m'; C_BAR='\033[38;5;39m' ;; # Sky
-    "11") C_MAIN='\033[38;5;11m'; C_ACCENT='\033[38;5;190m'; C_BAR='\033[38;5;11m' ;; # Yellow
-    "12") C_MAIN='\033[38;5;202m'; C_ACCENT='\033[38;5;214m'; C_BAR='\033[38;5;202m' ;; # Neon Orange
-    "13") C_MAIN='\033[38;5;51m'; C_ACCENT='\033[38;5;123m'; C_BAR='\033[38;5;51m' ;; # Cyan
-    "14") C_MAIN='\033[38;5;196m'; C_ACCENT='\033[38;5;160m'; C_BAR='\033[38;5;196m' ;; # Bright Red
-    "15") C_MAIN='\033[38;5;46m'; C_ACCENT='\033[38;5;82m'; C_BAR='\033[38;5;46m' ;; # Matrix Green
-    
-    # --- Pastels 16-30 ---
-    "16") C_MAIN='\033[38;5;219m'; C_ACCENT='\033[38;5;225m'; C_BAR='\033[38;5;219m' ;; # Pastel Pink
-    "17") C_MAIN='\033[38;5;159m'; C_ACCENT='\033[38;5;195m'; C_BAR='\033[38;5;159m' ;; # Pastel Blue
-    "18") C_MAIN='\033[38;5;157m'; C_ACCENT='\033[38;5;193m'; C_BAR='\033[38;5;157m' ;; # Pastel Green
-    "19") C_MAIN='\033[38;5;229m'; C_ACCENT='\033[38;5;230m'; C_BAR='\033[38;5;229m' ;; # Pastel Yellow
-    "20") C_MAIN='\033[38;5;183m'; C_ACCENT='\033[38;5;189m'; C_BAR='\033[38;5;183m' ;; # Lavender
-    
-    # --- Darks 31-50 ---
-    "31") C_MAIN='\033[38;5;236m'; C_ACCENT='\033[38;5;244m'; C_BAR='\033[38;5;236m' ;; # Grey
-    "32") C_MAIN='\033[38;5;22m'; C_ACCENT='\033[38;5;28m'; C_BAR='\033[38;5;22m' ;; # Forest
-    "33") C_MAIN='\033[38;5;17m'; C_ACCENT='\033[38;5;19m'; C_BAR='\033[38;5;17m' ;; # Navy
-    
-    # --- Vibrant/Exotic 51-100 (Programmatic fill logic below) ---
-    *)
-        # Fallback generator for high numbers or undefined
-        if [[ "$CURr_THEME" -ge 21 && "$CURr_THEME" -le 100 ]]; then
-             # Simple logic: map theme number to a color code in 256 range
-             # Offset to hit bright colors
-             COLOR_CODE=$((CURr_THEME + 30))
-             C_MAIN="\033[38;5;${COLOR_CODE}m"
-             C_ACCENT="\033[38;5;$((COLOR_CODE + 6))m"
-             C_BAR="\033[38;5;${COLOR_CODE}m"
-        else
-             # Default Fallback
-             C_MAIN='\033[1;34m'; C_ACCENT='\033[1;36m'; C_BAR='\033[1;34m'
-        fi
-    ;;
+    "green")    C_MAIN='\033[1;32m'; C_ACCENT='\033[1;32m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;32m' ;;
+    "purple")   C_MAIN='\033[1;35m'; C_ACCENT='\033[1;36m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;35m' ;;
+    "red")      C_MAIN='\033[1;31m'; C_ACCENT='\033[1;33m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;31m' ;;
+    "gold")     C_MAIN='\033[0;33m'; C_ACCENT='\033[1;33m'; C_TEXT='\033[1;37m'; C_BAR='\033[0;33m' ;;
+    "ocean")    C_MAIN='\033[0;36m'; C_ACCENT='\033[1;34m'; C_TEXT='\033[1;37m'; C_BAR='\033[0;36m' ;;
+    "retro")    C_MAIN='\033[0;31m'; C_ACCENT='\033[0;33m'; C_TEXT='\033[1;33m'; C_BAR='\033[0;33m' ;;
+    "mono")     C_MAIN='\033[1;30m'; C_ACCENT='\033[1;37m'; C_TEXT='\033[0;37m'; C_BAR='\033[1;37m' ;;
+    "dracula")  C_MAIN='\033[1;35m'; C_ACCENT='\033[1;32m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;31m' ;;
+    "nord")     C_MAIN='\033[1;34m'; C_ACCENT='\033[1;37m'; C_TEXT='\033[0;36m'; C_BAR='\033[1;34m' ;;
+    "gruvbox")  C_MAIN='\033[0;33m'; C_ACCENT='\033[1;32m'; C_TEXT='\033[1;37m'; C_BAR='\033[0;32m' ;;
+    "synth")    C_MAIN='\033[1;35m'; C_ACCENT='\033[1;36m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;36m' ;;
+    "toxic")    C_MAIN='\033[1;92m'; C_ACCENT='\033[1;93m'; C_TEXT='\033[1;97m'; C_BAR='\033[1;92m' ;;
+    "solar")    C_MAIN='\033[1;34m'; C_ACCENT='\033[1;33m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;33m' ;;
+    "royal")    C_MAIN='\033[1;35m'; C_ACCENT='\033[1;33m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;33m' ;;
+    *)          C_MAIN='\033[1;34m'; C_ACCENT='\033[1;36m'; C_TEXT='\033[1;37m'; C_BAR='\033[1;34m' ;;
 esac
 
-C_TEXT='\033[1;37m' # Always White
 RESET='\033[0m'; C_LABEL='\033[0;90m'; C_SUCCESS='\033[1;32m'; C_ALERT='\033[1;91m'
 
 # --- 2. INITIALIZATION & DEPENDENCIES ---
@@ -369,16 +335,17 @@ function detailed_status() {
 }
 
 # =========================================================
-# 7. SETTINGS & THEMES (EXPANDED)
+# 7. SETTINGS & THEMES (RESTORED & EXPANDED)
 # =========================================================
 
 function visual_settings() {
     clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "${C_TEXT}           VISUAL PREFERENCES STUDIO${RESET}"; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "${C_ACCENT} [A] COLOR THEMES (1-100)${RESET}"
-    echo -e "  [001-015] Standard Colors"
-    echo -e "  [016-030] Pastel Series"
-    echo -e "  [031-050] Dark/Night Mode"
-    echo -e "  [051-100] Vibrant/Exotic Mix"
+    echo -e "${C_ACCENT} [A] COLOR THEMES${RESET}"
+    echo -e "  [01] Corporate Blue   [06] Ocean Teal     [11] Solarized"
+    echo -e "  [02] Hacker Green     [07] Retro Amber    [12] Gruvbox"
+    echo -e "  [03] Cyber Purple     [08] Monochrome     [13] Synthwave"
+    echo -e "  [04] Admin Red        [09] Dracula        [14] Toxic Lime"
+    echo -e "  [05] Luxury Gold      [10] Nord Ice       [15] Royal Gold"
     echo -e ""
     echo -e "${C_ACCENT} [B] UNICODE FONT STYLE${RESET}"
     echo -e "  [21] Normal       [22] 𝙼𝚘𝚗𝚘      [23] ℍ𝕖𝕝𝕝𝕠     [24] 𝕳𝖊𝖑𝖑𝖔"
@@ -389,11 +356,14 @@ function visual_settings() {
     echo -e "${C_ACCENT} [C] FONT SCOPE${RESET}"
     echo -e "  [91] Banner Only (Safe)  [92] Full Interface (Max)"
     echo -e ""
-    echo -e "${C_LABEL}Enter a Theme Number (1-100) or Font Option${RESET}"
     read -p "Select > " v_opt
     
-    # Logic for Fonts
+    # Logic for Fonts & Themes
     case $v_opt in
+        1|01) echo "blue" > /etc/edu_theme ;; 2|02) echo "green" > /etc/edu_theme ;; 3|03) echo "purple" > /etc/edu_theme ;; 4|04) echo "red" > /etc/edu_theme ;; 5|05) echo "gold" > /etc/edu_theme ;;
+        6|06) echo "ocean" > /etc/edu_theme ;; 7|07) echo "retro" > /etc/edu_theme ;; 8|08) echo "mono" > /etc/edu_theme ;; 9|09) echo "dracula" > /etc/edu_theme ;; 10) echo "nord" > /etc/edu_theme ;;
+        11) echo "solar" > /etc/edu_theme ;; 12) echo "gruvbox" > /etc/edu_theme ;; 13) echo "synth" > /etc/edu_theme ;; 14) echo "toxic" > /etc/edu_theme ;; 15) echo "royal" > /etc/edu_theme ;;
+        
         21) echo "normal" > /etc/edu_ufont ;;
         22) echo "mono" > /etc/edu_ufont ;;
         23) echo "double" > /etc/edu_ufont ;; 
@@ -411,15 +381,6 @@ function visual_settings() {
         91) echo "banner" > /etc/edu_scope ;;
         92) echo "all" > /etc/edu_scope ;;
         0) menu ;;
-        
-        # Logic for Themes (1-100)
-        *)
-            if [[ "$v_opt" =~ ^[0-9]+$ ]] && [ "$v_opt" -ge 1 ] && [ "$v_opt" -le 100 ]; then
-                echo "$v_opt" > /etc/edu_theme
-            else
-                menu
-            fi
-        ;;
     esac
     echo -e "${C_SUCCESS}Updating Visuals...${RESET}"; sleep 1; exec "$0"
 }
@@ -509,7 +470,20 @@ function show_menu() {
         08|8) detailed_status ;;
         09|9) clear; speedtest ;;
         10|10) reboot ;;
-        11|11) sync; echo 3 > /proc/sys/vm/drop_caches; menu ;;
+        11|11) 
+            clear
+            echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+            echo -e "${C_TEXT}           RAM CACHE CLEANER${RESET}"
+            echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+            echo -ne "  ${C_LABEL}Syncing Data...${RESET} "
+            sync
+            echo -e "${C_SUCCESS}OK${RESET}"
+            echo -ne "  ${C_LABEL}Dropping Caches...${RESET} "
+            echo 3 > /proc/sys/vm/drop_caches
+            echo -e "${C_SUCCESS}DONE${RESET}"
+            sleep 2
+            menu 
+            ;;
         12|12) restart_services_pro ;;
         13|13) auto_reboot ;; 
         14|14) auto_backup "force"; menu ;;
