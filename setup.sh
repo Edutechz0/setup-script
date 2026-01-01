@@ -13,6 +13,7 @@ BICyan='\033[1;96m'       BIWhite='\033[1;97m'
 NC='\033[0m'
 
 # --- LINKS ---
+# This script downloads the binary, you do not edit the binary itself.
 INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/installer.bin"
 MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh"
 
@@ -32,6 +33,7 @@ function optimize_server() {
         echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
         echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
     fi
+    # Timeout added to prevent freezing on some VPS types
     timeout 3s sysctl -p > /dev/null 2>&1
     
     echo -e "${BIWhite}  [+] Removing conflicting Firewalls...${NC}"
@@ -83,47 +85,13 @@ fi
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 
-# === GUARANTEED SILENT INSTALL (ANTI-FREEZE) ===
-echo -e "${BIWhite}  Installing packages in background... ${BIYellow}(Max 4 mins)${NC}"
+# === BYPASS BINARY INPUTS ===
+# We feed it temporary data so it installs without freezing.
+# We will fix the domain and SSL in the next step.
+printf "temp.com\nns.temp.com\nn\n" | /tmp/installer.bin
 
-# 1. Start the binary in background with delayed inputs
-(
-    sleep 5; echo "temp.com"; 
-    sleep 2; echo "ns.temp.com"; 
-    sleep 2; echo "n"; 
-) | /tmp/installer.bin > /dev/null 2>&1 &
-
-# 2. Capture the Process ID (PID)
-BG_PID=$!
-
-# 3. Monitor the process with a progress bar
-#    We loop 240 times (240 seconds = 4 mins). 
-#    If it finishes early, we break. If it hangs, we kill it.
-for i in {1..240}; do
-    # Check if process is still running
-    if ps -p $BG_PID > /dev/null; then
-        # Still running: Print a dot or spinner
-        echo -ne "\r  ${BIWhite}Working${NC} .   "
-        sleep 0.3
-        echo -ne "\r  ${BIWhite}Working${NC} ..  "
-        sleep 0.3
-        echo -ne "\r  ${BIWhite}Working${NC} ... "
-        sleep 0.4
-    else
-        # Process finished naturally!
-        break
-    fi
-done
-
-# 4. SAFETY CHECK: If it's still running after loop, KILL IT.
-#    (It's likely stuck on the 'Reboot?' question, so killing is safe)
-if ps -p $BG_PID > /dev/null; then
-    kill -9 $BG_PID > /dev/null 2>&1
-    echo ""
-    echo -e "${BIYellow}  [Time Limit Reached] Forcing completion (Safe).${NC}"
-fi
-
-echo -e "\r  ${BIGreen}[DONE] Core Installed Successfully.         ${NC}"
+echo -e "${BICyan}--------------------------------------------------------${NC}"
+echo -e "${BIGreen}[Core Installation Complete]${NC}"
 sleep 1
 
 # 4. MANUAL CONFIGURATION & REPAIR
@@ -159,14 +127,14 @@ echo "$custom_ns" > /etc/slowdns/nsdomain
 echo -e "${BIGreen}NameServer saved: $custom_ns${NC}"
 echo ""
 
-# === CRITICAL REPAIR: FIX NGINX & SSL ===
+# === CRITICAL REPAIR: FIX NGINX & SSL (SOLVES ERROR 521) ===
 echo -e "${BIYellow}[Repairing Web Server & SSL...]${NC}"
 
-# 1. Replace the dummy "temp.com" with the real domain
+# 1. Replace the dummy "temp.com" with the real domain in Nginx configs
 sed -i "s/temp.com/$custom_domain/g" /etc/nginx/conf.d/*.conf 2>/dev/null
 sed -i "s/temp.com/$custom_domain/g" /etc/nginx/sites-enabled/*.conf 2>/dev/null
 
-# 2. Stop Nginx
+# 2. Stop Nginx to allow Cert Generation
 systemctl stop nginx
 
 # 3. Generate New SSL Certificate
@@ -176,7 +144,7 @@ curl -s https://get.acme.sh | sh > /dev/null 2>&1
 /root/.acme.sh/acme.sh --server letsencrypt --register-account -m "admin@$custom_domain" > /dev/null 2>&1
 /root/.acme.sh/acme.sh --issue -d "$custom_domain" --standalone --force
 
-# 4. Install Certificate
+# 4. Install Certificate to Xray path
 /root/.acme.sh/acme.sh --installcert -d "$custom_domain" \
     --key-file /etc/xray/xray.key \
     --fullchain-file /etc/xray/xray.crt > /dev/null 2>&1
