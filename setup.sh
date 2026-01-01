@@ -2,7 +2,7 @@
 
 # =========================================================
 #  EDUFWESH ULTIMATE INSTALLER V5.0
-#  (Optimized for Speed, Stability & Premium Menu v17)
+#  (Optimized for Speed, Stability & Premium Menu v12)
 # =========================================================
 
 # --- COLORS ---
@@ -78,19 +78,13 @@ chmod +x /tmp/installer.bin
 
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
-
-# =========================================================
-# MODIFIED BYPASS LOGIC
-# =========================================================
-# We feed "n" into the binary so it doesn't pause for reboot.
-# We redirect output slightly so we can clear the screen immediately.
-echo "n" | /tmp/installer.bin
-
-# IMMEDIATELY Clear the screen to hide the old design
-clear
+# Run the locked binary
+/tmp/installer.bin
+echo -e "${BICyan}--------------------------------------------------------${NC}"
 
 # 4. FINALIZATION
-msg_box "PHASE 3: FINALIZING & BRANDING"
+echo ""
+msg_box "PHASE 3: FINALIZING"
 
 # Kill Ghost
 kill $GHOST_PID 2>/dev/null
@@ -113,42 +107,16 @@ elif [ -f "/etc/slowdns/nsdomain" ]; then NS=$(cat /etc/slowdns/nsdomain);
 elif [ -f "/root/nsdomain" ]; then NS=$(cat /root/nsdomain); 
 else NS="Not Detected"; fi
 
-# --- FINAL CUSTOM RECEIPT (REPLACES OLD SCREEN) ---
+# --- FINAL RECEIPT ---
 clear
 echo -e "${BICyan}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan}║   ${BIYellow}           EDUFWESH AUTOSCRIPT INSTALLER            ${BICyan}   ║${NC}"
+echo -e "${BICyan}║             ${BIGreen}INSTALLATION COMPLETED SUCCESSFULLY!           ${BICyan}║${NC}"
 echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
-echo -e "${BICyan}║${NC} ${BIWhite}>>> SERVICE & PORT DETAILS <<<                           ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}OpenSSH${NC}       :  ${BIYellow}22${NC}                                  ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}SSH Websocket${NC} :  ${BIYellow}80 [HTTP]${NC}                           ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}SSH SSL${NC}       :  ${BIYellow}443 [HTTPS]${NC}                         ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}Stunnel4${NC}      :  ${BIYellow}447, 777${NC}                            ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}Dropbear${NC}      :  ${BIYellow}109, 143${NC}                            ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}BadVPN UDP${NC}    :  ${BIYellow}7100, 7200, 7300${NC}                    ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}Nginx${NC}         :  ${BIYellow}81${NC}                                  ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}XRAY Vmess${NC}    :  ${BIYellow}443, 80${NC}                             ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}XRAY Vless${NC}    :  ${BIYellow}443, 80${NC}                             ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}XRAY Trojan${NC}   :  ${BIYellow}443${NC}                                 ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Server IP    : ${BIYellow}$MYIP${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}ISP / Region : ${BIYellow}$ISP ($CITY)${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Domain       : ${BIYellow}$DOMAIN${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Name Server  : ${BIYellow}$NS${NC}"
 echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
-echo -e "${BICyan}║${NC} ${BIWhite}>>> SERVER INFORMATION <<<                               ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}IP Address   :${NC} ${BIYellow}$MYIP${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}ISP / Region :${NC} ${BIYellow}$ISP${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}Domain       :${NC} ${BIYellow}$DOMAIN${NC}"
-echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Type command: ${BIGreen}menu${NC} ${BIWhite}to open the Edufwesh Manager.    ${BICyan}║${NC}"
 echo -e "${BICyan}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${BIWhite} Installation Complete!${NC}"
-echo -e "${BIWhite} Type ${BIGreen}menu${BIWhite} to access the Edufwesh Manager.${NC}"
-echo ""
-
-# Ask for reboot manually since we skipped the binary's reboot
-read -p " Do you want to reboot now? (y/n): " x
-if [[ "$x" == "y" || "$x" == "Y" ]]; then
-    reboot
-else
-    echo -e "${BIYellow} Please reboot manually later for all changes to take effect.${NC}"
-fi
-
