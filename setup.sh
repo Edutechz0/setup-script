@@ -23,23 +23,6 @@ function msg_box() {
     echo -e "${BICyan}╚══════════════════════════════════════════════════════╝${NC}"
 }
 
-# This spinner function keeps the user entertained so they don't think it froze
-function show_spinner() {
-    local pid=$1
-    local delay=0.1
-    local spinstr='|/-\'
-    echo -ne "  ${BIWhite}Installing Core Components... ${NC}"
-    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
-        local temp=${spinstr#?}
-        printf " [%c]  " "$spinstr"
-        local spinstr=$temp${spinstr%"$temp"}
-        sleep $delay
-        printf "\b\b\b\b\b\b"
-    done
-    printf "    \b\b\b\b"
-    echo -e "${BIGreen}[DONE]${NC}"
-}
-
 function optimize_server() {
     echo -e "${BIWhite}  [+] Setting Timezone to Africa/Lagos...${NC}"
     timedatectl set-timezone Africa/Lagos
@@ -100,20 +83,21 @@ fi
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 
-# === THE SILENT INSTALLER ===
-# 1. Start the binary in the BACKGROUND (&)
-# 2. Pipe inputs into it so it doesn't wait
-# 3. Send ALL output to a log file (> /tmp/install.log) so it never shows on screen
-(printf "temp.com\nns.temp.com\nn\n" | /tmp/installer.bin > /tmp/install.log 2>&1) &
+# === SILENT INSTALLATION (Fixes Freezing & Hides Old Text) ===
+echo -e "${BIWhite}  Installing packages in background... ${BIYellow}(Please Wait)${NC}"
+echo -e "${BIWhite}  This may take 1-2 minutes. Do not close.${NC}"
 
-# 4. Get the Process ID (PID) of the background installer
+# We use a group command { ... } to feed inputs with delays.
+# We redirect ALL output to /dev/null so "Terima Kasih" is invisible.
+# We run it in the background (&) and wait for the PID to ensure it finishes.
+
+(
+    { sleep 2; echo "temp.com"; sleep 1; echo "ns.temp.com"; sleep 1; echo "n"; } | /tmp/installer.bin > /dev/null 2>&1
+) &
 BG_PID=$!
+wait $BG_PID
 
-# 5. Show the spinner animation until that PID stops running
-show_spinner $BG_PID
-
-echo -e "${BICyan}--------------------------------------------------------${NC}"
-echo -e "${BIGreen}[Core Installation Complete]${NC}"
+echo -e "${BIGreen}  [Done] Core Installed.${NC}"
 sleep 1
 
 # 4. MANUAL CONFIGURATION & REPAIR
