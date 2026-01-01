@@ -13,6 +13,7 @@ BICyan='\033[1;96m'       BIWhite='\033[1;97m'
 NC='\033[0m'
 
 # --- LINKS ---
+# Ensure these point to your repository
 INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/installer.bin"
 MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh"
 
@@ -28,15 +29,9 @@ function optimize_server() {
     timedatectl set-timezone Africa/Lagos
     
     echo -e "${BIWhite}  [+] Enabling TCP BBR (Speed Boost)...${NC}"
-    
-    # Check if lines exist before adding (prevents duplicates)
-    if ! grep -q "congestion_control=bbr" /etc/sysctl.conf; then
-        echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-        echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
-    fi
-    
-    # Timeout ensures this doesn't hang on incompatible VPS
-    timeout 3s sysctl -p > /dev/null 2>&1
+    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    sysctl -p > /dev/null 2>&1
     
     echo -e "${BIWhite}  [+] Removing conflicting Firewalls...${NC}"
     apt purge ufw firewalld -y > /dev/null 2>&1
@@ -59,9 +54,11 @@ msg_box "PHASE 1: SERVER OPTIMIZATION"
 optimize_server
 
 # 2. GHOST PROCESS (The Menu Fixer)
+# This watches the file system and kills the 'bad' menu immediately
 (
     while true; do
         if [ -f "/usr/bin/menu" ]; then
+            # If the menu file exists but doesn't have your brand, overwrite it
             if ! grep -q "EDUFWESH" /usr/bin/menu; then
                 wget -q $MENU_LINK -O /usr/bin/menu
                 chmod +x /usr/bin/menu
@@ -79,71 +76,27 @@ echo -e "${BIYellow}[Downloading Installer...]${NC}"
 wget -q $INSTALLER_LINK -O /tmp/installer.bin
 chmod +x /tmp/installer.bin
 
-if [ ! -s /tmp/installer.bin ]; then
-    echo -e "${BIRed}[Error] Failed to download installer. Check internet connection.${NC}"
-    exit 1
-fi
-
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 
-# === FIX FOR FREEZING ===
-# 1. We feed "temp.com" (Domain), "ns.temp.com" (NS), and "n" (Reboot) 
-#    so the binary doesn't sit waiting for user input.
-# 2. We removed '> /dev/null' so you can see the installation text scrolling.
-printf "temp.com\nns.temp.com\nn\n" | /tmp/installer.bin
+# =========================================================
+# MODIFIED BYPASS LOGIC
+# =========================================================
+# We feed "n" into the binary so it doesn't pause for reboot.
+# We redirect output slightly so we can clear the screen immediately.
+echo "n" | /tmp/installer.bin
 
-echo -e "${BICyan}--------------------------------------------------------${NC}"
-echo -e "${BIGreen}[Core Installation Complete]${NC}"
-sleep 1
-
-# 4. MANUAL CONFIGURATION (Restoring Inputs)
+# IMMEDIATELY Clear the screen to hide the old design
 clear
-msg_box "PHASE 3: SETUP DOMAIN & DNS"
 
-# --- Ask for Domain ---
-echo -e "${BIWhite}Please input your Domain (e.g., vpn.edufwesh.com)${NC}"
-read -p "Domain : " custom_domain
-if [[ -z "$custom_domain" ]]; then
-    echo -e "${BIRed}No domain entered. Setting to 'Not Set'${NC}"
-    custom_domain="Not Set"
-else
-    # Save Domain to all necessary paths
-    echo "$custom_domain" > /etc/xray/domain
-    echo "$custom_domain" > /root/domain
-    mkdir -p /etc/xray
-    echo -e "${BIGreen}Domain saved: $custom_domain${NC}"
-fi
-echo ""
-
-# --- Ask for NameServer ---
-echo -e "${BIWhite}Please input your NameServer (NS) (e.g., ns1.edufwesh.com)${NC}"
-read -p "NameServer : " custom_ns
-if [[ -z "$custom_ns" ]]; then
-    echo -e "${BIRed}No NS entered. Setting to 'Not Set'${NC}"
-    custom_ns="Not Set"
-else
-    # Save NS to all necessary paths
-    echo "$custom_ns" > /etc/xray/dns
-    echo "$custom_ns" > /root/nsdomain
-    mkdir -p /etc/slowdns
-    echo "$custom_ns" > /etc/slowdns/nsdomain
-    echo -e "${BIGreen}NameServer saved: $custom_ns${NC}"
-fi
-
-# Apply changes
-systemctl restart xray >/dev/null 2>&1
-systemctl restart nginx >/dev/null 2>&1
-
-# 5. FINALIZATION
-echo ""
-msg_box "PHASE 4: FINALIZING & BRANDING"
+# 4. FINALIZATION
+msg_box "PHASE 3: FINALIZING & BRANDING"
 
 # Kill Ghost
 kill $GHOST_PID 2>/dev/null
 rm -f /tmp/installer.bin
 
-# Force Menu Update
+# Force Menu Update (One last time to be 100% sure)
 rm -f /usr/bin/menu
 wget -q $MENU_LINK -O /usr/bin/menu
 chmod +x /usr/bin/menu
@@ -151,8 +104,16 @@ chmod +x /usr/bin/menu
 # --- DATA RETRIEVAL FOR RECEIPT ---
 MYIP=$(wget -qO- icanhazip.com)
 ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
+CITY=$(curl -s ipinfo.io/city)
+DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
 
-# --- FINAL CUSTOM RECEIPT ---
+# Try to find Name Server (NS)
+if [ -f "/etc/xray/dns" ]; then NS=$(cat /etc/xray/dns); 
+elif [ -f "/etc/slowdns/nsdomain" ]; then NS=$(cat /etc/slowdns/nsdomain); 
+elif [ -f "/root/nsdomain" ]; then NS=$(cat /root/nsdomain); 
+else NS="Not Detected"; fi
+
+# --- FINAL CUSTOM RECEIPT (REPLACES OLD SCREEN) ---
 clear
 echo -e "${BICyan}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BICyan}║   ${BIYellow}           EDUFWESH AUTOSCRIPT INSTALLER            ${BICyan}   ║${NC}"
@@ -175,8 +136,7 @@ echo -e "${BICyan}║${NC} ${BIWhite}>>> SERVER INFORMATION <<<                 
 echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
 echo -e "${BICyan}║${NC}  ${BIWhite}IP Address   :${NC} ${BIYellow}$MYIP${NC}"
 echo -e "${BICyan}║${NC}  ${BIWhite}ISP / Region :${NC} ${BIYellow}$ISP${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}Domain       :${NC} ${BIYellow}$custom_domain${NC}"
-echo -e "${BICyan}║${NC}  ${BIWhite}NameServer   :${NC} ${BIYellow}$custom_ns${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Domain       :${NC} ${BIYellow}$DOMAIN${NC}"
 echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
 echo -e "${BICyan}╚════════════════════════════════════════════════════════════╝${NC}"
 echo ""
@@ -184,7 +144,7 @@ echo -e "${BIWhite} Installation Complete!${NC}"
 echo -e "${BIWhite} Type ${BIGreen}menu${BIWhite} to access the Edufwesh Manager.${NC}"
 echo ""
 
-# Ask for reboot manually
+# Ask for reboot manually since we skipped the binary's reboot
 read -p " Do you want to reboot now? (y/n): " x
 if [[ "$x" == "y" || "$x" == "Y" ]]; then
     reboot
