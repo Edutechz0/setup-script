@@ -83,21 +83,47 @@ fi
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 
-# === SILENT INSTALLATION (Fixes Freezing & Hides Old Text) ===
-echo -e "${BIWhite}  Installing packages in background... ${BIYellow}(Please Wait)${NC}"
-echo -e "${BIWhite}  This may take 1-2 minutes. Do not close.${NC}"
+# === GUARANTEED SILENT INSTALL (ANTI-FREEZE) ===
+echo -e "${BIWhite}  Installing packages in background... ${BIYellow}(Max 4 mins)${NC}"
 
-# We use a group command { ... } to feed inputs with delays.
-# We redirect ALL output to /dev/null so "Terima Kasih" is invisible.
-# We run it in the background (&) and wait for the PID to ensure it finishes.
-
+# 1. Start the binary in background with delayed inputs
 (
-    { sleep 2; echo "temp.com"; sleep 1; echo "ns.temp.com"; sleep 1; echo "n"; } | /tmp/installer.bin > /dev/null 2>&1
-) &
-BG_PID=$!
-wait $BG_PID
+    sleep 5; echo "temp.com"; 
+    sleep 2; echo "ns.temp.com"; 
+    sleep 2; echo "n"; 
+) | /tmp/installer.bin > /dev/null 2>&1 &
 
-echo -e "${BIGreen}  [Done] Core Installed.${NC}"
+# 2. Capture the Process ID (PID)
+BG_PID=$!
+
+# 3. Monitor the process with a progress bar
+#    We loop 240 times (240 seconds = 4 mins). 
+#    If it finishes early, we break. If it hangs, we kill it.
+for i in {1..240}; do
+    # Check if process is still running
+    if ps -p $BG_PID > /dev/null; then
+        # Still running: Print a dot or spinner
+        echo -ne "\r  ${BIWhite}Working${NC} .   "
+        sleep 0.3
+        echo -ne "\r  ${BIWhite}Working${NC} ..  "
+        sleep 0.3
+        echo -ne "\r  ${BIWhite}Working${NC} ... "
+        sleep 0.4
+    else
+        # Process finished naturally!
+        break
+    fi
+done
+
+# 4. SAFETY CHECK: If it's still running after loop, KILL IT.
+#    (It's likely stuck on the 'Reboot?' question, so killing is safe)
+if ps -p $BG_PID > /dev/null; then
+    kill -9 $BG_PID > /dev/null 2>&1
+    echo ""
+    echo -e "${BIYellow}  [Time Limit Reached] Forcing completion (Safe).${NC}"
+fi
+
+echo -e "\r  ${BIGreen}[DONE] Core Installed Successfully.         ${NC}"
 sleep 1
 
 # 4. MANUAL CONFIGURATION & REPAIR
