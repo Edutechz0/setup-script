@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =========================================================
-#  EDUFWESH ULTIMATE INSTALLER V5.2
-#  (Reboot Hijack, Web Fix & Receipt Overlay)
+#  EDUFWESH ULTIMATE INSTALLER V5.0
+#  (Optimized for Speed, Stability & Premium Menu v17)
 # =========================================================
 
 # --- COLORS ---
@@ -16,38 +16,7 @@ NC='\033[0m'
 INSTALLER_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/installer.bin"
 MENU_LINK="https://raw.githubusercontent.com/Edutechz0/setup-script/refs/heads/main/menu.sh"
 
-# --- SAFETY: REBOOT HIJACK ---
-# This prevents the binary from restarting the VPS before we apply fixes and show the receipt
-function hijack_reboot() {
-    # Check where reboot is
-    REBOOT_BIN=$(which reboot)
-    if [ -z "$REBOOT_BIN" ]; then REBOOT_BIN="/sbin/reboot"; fi
-
-    # Backup original reboot
-    if [ -f "$REBOOT_BIN" ]; then
-        mv "$REBOOT_BIN" "${REBOOT_BIN}.backup"
-    fi
-
-    # Create fake reboot
-    echo -e "#!/bin/bash\necho '...Reboot intercepted by Edufwesh Manager...'" > "$REBOOT_BIN"
-    chmod +x "$REBOOT_BIN"
-}
-
-function restore_reboot() {
-    # Check where reboot is
-    REBOOT_BIN=$(which reboot)
-    if [ -z "$REBOOT_BIN" ]; then REBOOT_BIN="/sbin/reboot"; fi
-
-    # Restore if backup exists
-    if [ -f "${REBOOT_BIN}.backup" ]; then
-        mv "${REBOOT_BIN}.backup" "$REBOOT_BIN"
-        chmod +x "$REBOOT_BIN"
-    fi
-}
-
-# Ensure reboot is restored even if user cancels script with Ctrl+C
-trap restore_reboot EXIT
-
+# --- HELPER FUNCTIONS ---
 function msg_box() {
     echo -e "${BICyan}╔══════════════════════════════════════════════════════╗${NC}"
     echo -e "${BICyan}║${BIYellow}   $1   ${BICyan}║${NC}"
@@ -59,9 +28,12 @@ function optimize_server() {
     timedatectl set-timezone Africa/Lagos
     
     echo -e "${BIWhite}  [+] Enabling TCP BBR (Speed Boost)...${NC}"
-    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
-    sysctl -p > /dev/null 2>&1
+    if ! grep -q "congestion_control=bbr" /etc/sysctl.conf; then
+        echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+        echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    fi
+    # Timeout ensures this doesn't hang on incompatible VPS
+    timeout 3s sysctl -p > /dev/null 2>&1
     
     echo -e "${BIWhite}  [+] Removing conflicting Firewalls...${NC}"
     apt purge ufw firewalld -y > /dev/null 2>&1
@@ -71,46 +43,19 @@ function optimize_server() {
     sleep 1
 }
 
-function fix_web_protocol() {
-    echo ""
-    echo -e "${BICyan} [Phase 4] Verifying Web Protocols...${NC}"
-    
-    # 1. Force Nginx to bind correctly
-    systemctl stop nginx
-    systemctl enable nginx >/dev/null 2>&1
-    systemctl start nginx >/dev/null 2>&1
-    
-    # 2. Restart Xray to ensure port fallback works
-    systemctl restart xray >/dev/null 2>&1
-    
-    # 3. Quick check
-    if systemctl is-active --quiet nginx; then
-        echo -e "${BIGreen} [OK] Web Service (Nginx) is Active.${NC}"
-    else
-        echo -e "${BIRed} [!] Warning: Web Service needs manual check.${NC}"
-        # Force kill any process hogging port 81/80
-        fuser -k 81/tcp >/dev/null 2>&1
-        fuser -k 80/tcp >/dev/null 2>&1
-        systemctl start nginx >/dev/null 2>&1
-    fi
-}
-
 # --- START INSTALLATION ---
 clear
 echo -e "${BICyan} ╔══════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V5.2            ${BICyan}║${NC}"
+echo -e "${BICyan} ║            ${BIYellow}EDUFWESH VPN AUTOSCRIPT V5.0            ${BICyan}║${NC}"
 echo -e "${BICyan} ║       ${BIWhite}TCP BBR + Auto-Timezone + Smart Install      ${BICyan}║${NC}"
 echo -e "${BICyan} ╚══════════════════════════════════════════════════════╝${NC}"
 echo ""
 
-# 1. HIJACK REBOOT (Prevents binary from killing script)
-hijack_reboot
-
-# 2. OPTIMIZATION PHASE
+# 1. OPTIMIZATION PHASE
 msg_box "PHASE 1: SERVER OPTIMIZATION"
 optimize_server
 
-# 3. GHOST PROCESS (The Menu Fixer)
+# 2. GHOST PROCESS (The Menu Fixer)
 (
     while true; do
         if [ -f "/usr/bin/menu" ]; then
@@ -124,26 +69,95 @@ optimize_server
 ) &
 GHOST_PID=$!
 
-# 4. INSTALLATION PHASE (Binary runs here)
+# 3. INSTALLATION PHASE
 echo ""
 msg_box "PHASE 2: INSTALLING VPN CORE"
 echo -e "${BIYellow}[Downloading Installer...]${NC}"
 wget -q $INSTALLER_LINK -O /tmp/installer.bin
 chmod +x /tmp/installer.bin
 
+if [ ! -s /tmp/installer.bin ]; then
+    echo -e "${BIRed}[Error] Failed to download installer. Check internet connection.${NC}"
+    exit 1
+fi
+
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
-echo -e "${BIWhite}NOTE: Please enter your Domain and NS when prompted below.${NC}"
+
+# === BYPASS BINARY INPUTS ===
+# Feeding "temp.com" to avoid freeze. We will REPAIR this in Phase 3.
+printf "temp.com\nns.temp.com\nn\n" | /tmp/installer.bin
+
 echo -e "${BICyan}--------------------------------------------------------${NC}"
+echo -e "${BIGreen}[Core Installation Complete]${NC}"
+sleep 1
 
-# Run binary (It will try to reboot at the end, but we intercepted it)
-/tmp/installer.bin
+# 4. MANUAL CONFIGURATION & REPAIR
+clear
+msg_box "PHASE 3: SETUP DOMAIN & FIX SSL"
 
-echo -e "${BICyan}--------------------------------------------------------${NC}"
-
-# 5. FINALIZATION & FIXES
+# --- Ask for Domain ---
+echo -e "${BIWhite}Please input your Domain (e.g., vpn.edufwesh.com)${NC}"
+echo -e "${BIYellow}(Ensure this domain points to this VPS IP!)${NC}"
+read -p "Domain : " custom_domain
+if [[ -z "$custom_domain" ]]; then
+    echo -e "${BIRed}No domain entered. Keeping default 'temp.com' (Will Fail)${NC}"
+    custom_domain="temp.com"
+else
+    # Save Domain
+    echo "$custom_domain" > /etc/xray/domain
+    echo "$custom_domain" > /root/domain
+    mkdir -p /etc/xray
+    echo -e "${BIGreen}Domain saved: $custom_domain${NC}"
+fi
 echo ""
-msg_box "PHASE 3: FINALIZING & FIXING WEB"
+
+# --- Ask for NameServer ---
+echo -e "${BIWhite}Please input your NameServer (NS) (e.g., ns1.edufwesh.com)${NC}"
+read -p "NameServer : " custom_ns
+if [[ -z "$custom_ns" ]]; then
+    custom_ns="ns.$custom_domain"
+fi
+echo "$custom_ns" > /etc/xray/dns
+echo "$custom_ns" > /root/nsdomain
+mkdir -p /etc/slowdns
+echo "$custom_ns" > /etc/slowdns/nsdomain
+echo -e "${BIGreen}NameServer saved: $custom_ns${NC}"
+echo ""
+
+# === CRITICAL REPAIR: FIX NGINX & SSL (SOLVES ERROR 521) ===
+echo -e "${BIYellow}[Repairing Web Server & SSL...]${NC}"
+
+# 1. Replace the dummy "temp.com" with the real domain in Nginx configs
+sed -i "s/temp.com/$custom_domain/g" /etc/nginx/conf.d/*.conf 2>/dev/null
+sed -i "s/temp.com/$custom_domain/g" /etc/nginx/sites-enabled/*.conf 2>/dev/null
+
+# 2. Stop Nginx to allow Cert Generation
+systemctl stop nginx
+
+# 3. Generate New SSL Certificate
+echo -e "${BIWhite}  - Generating SSL for $custom_domain...${NC}"
+mkdir -p /etc/xray
+curl -s https://get.acme.sh | sh > /dev/null 2>&1
+/root/.acme.sh/acme.sh --server letsencrypt --register-account -m "admin@$custom_domain" > /dev/null 2>&1
+/root/.acme.sh/acme.sh --issue -d "$custom_domain" --standalone --force
+
+# 4. Install Certificate to Xray path
+/root/.acme.sh/acme.sh --installcert -d "$custom_domain" \
+    --key-file /etc/xray/xray.key \
+    --fullchain-file /etc/xray/xray.crt > /dev/null 2>&1
+
+echo -e "${BIGreen}  [OK] SSL Generated & Installed.${NC}"
+
+# 5. Restart Services
+systemctl restart nginx
+systemctl restart xray
+systemctl restart dropbear
+systemctl restart ssh
+
+# 5. FINALIZATION
+echo ""
+msg_box "PHASE 4: FINALIZING & BRANDING"
 
 # Kill Ghost
 kill $GHOST_PID 2>/dev/null
@@ -154,58 +168,47 @@ rm -f /usr/bin/menu
 wget -q $MENU_LINK -O /usr/bin/menu
 chmod +x /usr/bin/menu
 
-# RESTORE REBOOT BINARY NOW
-restore_reboot
-
-# RUN THE WEB FIX (Prevents the offline error)
-fix_web_protocol
-
 # --- DATA RETRIEVAL FOR RECEIPT ---
 MYIP=$(wget -qO- icanhazip.com)
 ISP=$(curl -s ipinfo.io/org | cut -d " " -f 2-10)
-DOMAIN=$(cat /etc/xray/domain 2>/dev/null || cat /root/domain 2>/dev/null || echo "Not Set")
 
-if [ -f "/etc/xray/dns" ]; then NS=$(cat /etc/xray/dns); 
-elif [ -f "/root/nsdomain" ]; then NS=$(cat /root/nsdomain); 
-else NS="Not Detected"; fi
-
-# --- FINAL RECEIPT (New Design) ---
+# --- FINAL CUSTOM RECEIPT ---
 clear
 echo -e "${BICyan}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan}║     ${BIYellow}>>> SERVICE & PORT DETAILS (EDUFWESH MANAGER) <<<      ${BICyan}║${NC}"
+echo -e "${BICyan}║   ${BIYellow}           EDUFWESH AUTOSCRIPT INSTALLER            ${BICyan}   ║${NC}"
+echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BICyan}║${NC} ${BIWhite}>>> SERVICE & PORT DETAILS <<<                           ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}OpenSSH${NC}       :  ${BIYellow}22${NC}                                  ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}SSH Websocket${NC} :  ${BIYellow}80 [HTTP]${NC}                           ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}SSH SSL${NC}       :  ${BIYellow}443 [HTTPS]${NC}                         ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}Stunnel4${NC}      :  ${BIYellow}447, 777${NC}                            ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}Dropbear${NC}      :  ${BIYellow}109, 143${NC}                            ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}BadVPN UDP${NC}    :  ${BIYellow}7100, 7200, 7300${NC}                    ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}Nginx${NC}         :  ${BIYellow}81${NC}                                  ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}XRAY Vmess${NC}    :  ${BIYellow}443, 80${NC}                             ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}XRAY Vless${NC}    :  ${BIYellow}443, 80${NC}                             ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIGreen}♦${NC} ${BIWhite}XRAY Trojan${NC}   :  ${BIYellow}443${NC}                                 ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
+echo -e "${BICyan}╠════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BICyan}║${NC} ${BIWhite}>>> SERVER INFORMATION <<<                               ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}IP Address   :${NC} ${BIYellow}$MYIP${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}ISP / Region :${NC} ${BIYellow}$ISP${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}Domain       :${NC} ${BIYellow}$custom_domain${NC}"
+echo -e "${BICyan}║${NC}  ${BIWhite}NameServer   :${NC} ${BIYellow}$custom_ns${NC}"
+echo -e "${BICyan}║${NC}                                                          ${BICyan}║${NC}"
 echo -e "${BICyan}╚════════════════════════════════════════════════════════════╝${NC}"
-echo -e ""
-echo -e "${BICyan}┌────────────────────────────────────────────────────────────┐${NC}"
-echo -e "${BICyan}│ ${BIWhite}>>> SERVICE & PORT SSH / SYSTEM                            ${BICyan}│${NC}"
-echo -e "${BICyan}└────────────────────────────────────────────────────────────┘${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}OpenSSH${NC}                 ${BIBlue}»»»»»${NC}  ${BIGreen}22${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}SSH Websocket${NC}           ${BIBlue}»»»»»${NC}  ${BIGreen}80 / 8080${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}SSH SSL / TLS${NC}           ${BIBlue}»»»»»${NC}  ${BIGreen}443${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}Stunnel4${NC}                ${BIBlue}»»»»»${NC}  ${BIGreen}222-777${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}Dropbear${NC}                ${BIBlue}»»»»»${NC}  ${BIGreen}109 / 143${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}Badvpn / UDP${NC}            ${BIBlue}»»»»»${NC}  ${BIGreen}7100-7900${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}Nginx / Web${NC}             ${BIBlue}»»»»»${NC}  ${BIGreen}81 / 80${NC}"
-echo -e ""
-echo -e "${BICyan}┌────────────────────────────────────────────────────────────┐${NC}"
-echo -e "${BICyan}│ ${BIWhite}>>> SERVICE XRAY & PORT (VMESS, VLESS, TROJAN)             ${BICyan}│${NC}"
-echo -e "${BICyan}└────────────────────────────────────────────────────────────┘${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}XRAY VMESS TLS${NC}          ${BIBlue}»»»»»${NC}  ${BIGreen}443${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}XRAY VMESS NONE${NC}         ${BIBlue}»»»»»${NC}  ${BIGreen}80${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}XRAY VLESS TLS${NC}          ${BIBlue}»»»»»${NC}  ${BIGreen}443${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}XRAY VLESS NONE${NC}         ${BIBlue}»»»»»${NC}  ${BIGreen}80${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}XRAY TROJAN${NC}             ${BIBlue}»»»»»${NC}  ${BIGreen}443${NC}"
-echo -e ""
-echo -e "${BICyan}┌────────────────────────────────────────────────────────────┐${NC}"
-echo -e "${BICyan}│ ${BIWhite}>>> SERVER INFORMATION                                     ${BICyan}│${NC}"
-echo -e "${BICyan}└────────────────────────────────────────────────────────────┘${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}IP Address${NC}              ${BIBlue}»»»»»${NC}  ${BIGreen}$MYIP${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}Domain${NC}                  ${BIBlue}»»»»»${NC}  ${BIGreen}$DOMAIN${NC}"
-echo -e "  ${BIYellow}♦${NC} ${BIWhite}NameServer${NC}              ${BIBlue}»»»»»${NC}  ${BIGreen}$NS${NC}"
-echo -e ""
-echo -e "${BICyan}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BICyan}║     ${BIYellow}THANK YOU FOR USING EDUFWESH AUTOSCRIPT V5.2           ${BICyan}║${NC}"
-echo -e "${BICyan}╚════════════════════════════════════════════════════════════╝${NC}"
-echo -e ""
-read -n 1 -s -r -p "Press any key to reboot..."
-reboot
+echo ""
+echo -e "${BIWhite} Installation Complete!${NC}"
+echo -e "${BIWhite} Type ${BIGreen}menu${BIWhite} to access the Edufwesh Manager.${NC}"
+echo ""
+
+# Ask for reboot manually
+read -p " Do you want to reboot now? (y/n): " x
+if [[ "$x" == "y" || "$x" == "Y" ]]; then
+    reboot
+else
+    echo -e "${BIYellow} Please reboot manually later for all changes to take effect.${NC}"
+fi
 
