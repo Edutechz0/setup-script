@@ -28,9 +28,15 @@ function optimize_server() {
     timedatectl set-timezone Africa/Lagos
     
     echo -e "${BIWhite}  [+] Enabling TCP BBR (Speed Boost)...${NC}"
-    echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
-    echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
-    sysctl -p > /dev/null 2>&1
+    
+    # Check if lines exist before adding (prevents duplicates)
+    if ! grep -q "congestion_control=bbr" /etc/sysctl.conf; then
+        echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
+        echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
+    fi
+    
+    # Timeout ensures this doesn't hang on incompatible VPS
+    timeout 3s sysctl -p > /dev/null 2>&1
     
     echo -e "${BIWhite}  [+] Removing conflicting Firewalls...${NC}"
     apt purge ufw firewalld -y > /dev/null 2>&1
@@ -73,12 +79,19 @@ echo -e "${BIYellow}[Downloading Installer...]${NC}"
 wget -q $INSTALLER_LINK -O /tmp/installer.bin
 chmod +x /tmp/installer.bin
 
+if [ ! -s /tmp/installer.bin ]; then
+    echo -e "${BIRed}[Error] Failed to download installer. Check internet connection.${NC}"
+    exit 1
+fi
+
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 
-# Run binary with "n" piped to bypass the 'Terima Kasih' screen reboot prompt
-# This bypasses the binary's input prompts too, so we must ask manually below.
-echo "n" | /tmp/installer.bin >/dev/null 2>&1
+# === FIX FOR FREEZING ===
+# 1. We feed "temp.com" (Domain), "ns.temp.com" (NS), and "n" (Reboot) 
+#    so the binary doesn't sit waiting for user input.
+# 2. We removed '> /dev/null' so you can see the installation text scrolling.
+printf "temp.com\nns.temp.com\nn\n" | /tmp/installer.bin
 
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 echo -e "${BIGreen}[Core Installation Complete]${NC}"
@@ -118,7 +131,7 @@ else
     echo -e "${BIGreen}NameServer saved: $custom_ns${NC}"
 fi
 
-# Apply changes slightly
+# Apply changes
 systemctl restart xray >/dev/null 2>&1
 systemctl restart nginx >/dev/null 2>&1
 
