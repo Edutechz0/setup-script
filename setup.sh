@@ -23,6 +23,23 @@ function msg_box() {
     echo -e "${BICyan}╚══════════════════════════════════════════════════════╝${NC}"
 }
 
+# This spinner function keeps the user entertained so they don't think it froze
+function show_spinner() {
+    local pid=$1
+    local delay=0.1
+    local spinstr='|/-\'
+    echo -ne "  ${BIWhite}Installing Core Components... ${NC}"
+    while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+        local temp=${spinstr#?}
+        printf " [%c]  " "$spinstr"
+        local spinstr=$temp${spinstr%"$temp"}
+        sleep $delay
+        printf "\b\b\b\b\b\b"
+    done
+    printf "    \b\b\b\b"
+    echo -e "${BIGreen}[DONE]${NC}"
+}
+
 function optimize_server() {
     echo -e "${BIWhite}  [+] Setting Timezone to Africa/Lagos...${NC}"
     timedatectl set-timezone Africa/Lagos
@@ -32,7 +49,6 @@ function optimize_server() {
         echo "net.core.default_qdisc=fq" >> /etc/sysctl.conf
         echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.conf
     fi
-    # Timeout ensures this doesn't hang on incompatible VPS
     timeout 3s sysctl -p > /dev/null 2>&1
     
     echo -e "${BIWhite}  [+] Removing conflicting Firewalls...${NC}"
@@ -84,9 +100,17 @@ fi
 echo -e "${BIYellow}[Running Core Script...]${NC}"
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 
-# === BYPASS BINARY INPUTS ===
-# Feeding "temp.com" to avoid freeze. We will REPAIR this in Phase 3.
-printf "temp.com\nns.temp.com\nn\n" | /tmp/installer.bin
+# === THE SILENT INSTALLER ===
+# 1. Start the binary in the BACKGROUND (&)
+# 2. Pipe inputs into it so it doesn't wait
+# 3. Send ALL output to a log file (> /tmp/install.log) so it never shows on screen
+(printf "temp.com\nns.temp.com\nn\n" | /tmp/installer.bin > /tmp/install.log 2>&1) &
+
+# 4. Get the Process ID (PID) of the background installer
+BG_PID=$!
+
+# 5. Show the spinner animation until that PID stops running
+show_spinner $BG_PID
 
 echo -e "${BICyan}--------------------------------------------------------${NC}"
 echo -e "${BIGreen}[Core Installation Complete]${NC}"
@@ -125,14 +149,14 @@ echo "$custom_ns" > /etc/slowdns/nsdomain
 echo -e "${BIGreen}NameServer saved: $custom_ns${NC}"
 echo ""
 
-# === CRITICAL REPAIR: FIX NGINX & SSL (SOLVES ERROR 521) ===
+# === CRITICAL REPAIR: FIX NGINX & SSL ===
 echo -e "${BIYellow}[Repairing Web Server & SSL...]${NC}"
 
-# 1. Replace the dummy "temp.com" with the real domain in Nginx configs
+# 1. Replace the dummy "temp.com" with the real domain
 sed -i "s/temp.com/$custom_domain/g" /etc/nginx/conf.d/*.conf 2>/dev/null
 sed -i "s/temp.com/$custom_domain/g" /etc/nginx/sites-enabled/*.conf 2>/dev/null
 
-# 2. Stop Nginx to allow Cert Generation
+# 2. Stop Nginx
 systemctl stop nginx
 
 # 3. Generate New SSL Certificate
@@ -142,7 +166,7 @@ curl -s https://get.acme.sh | sh > /dev/null 2>&1
 /root/.acme.sh/acme.sh --server letsencrypt --register-account -m "admin@$custom_domain" > /dev/null 2>&1
 /root/.acme.sh/acme.sh --issue -d "$custom_domain" --standalone --force
 
-# 4. Install Certificate to Xray path
+# 4. Install Certificate
 /root/.acme.sh/acme.sh --installcert -d "$custom_domain" \
     --key-file /etc/xray/xray.key \
     --fullchain-file /etc/xray/xray.crt > /dev/null 2>&1
