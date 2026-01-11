@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # =========================================================
-# EDUFWESH MANAGER - ULTIMATE ENTERPRISE v17.1 (Patched)
+# EDUFWESH MANAGER - ULTIMATE ENTERPRISE v17.0
 # (Features: Universal Data Parsing, Unicode Fonts, Pro Themes)
 # =========================================================
 
@@ -110,19 +110,19 @@ case $CURr_UFONT in
     "serif_bold") # 𝐇𝐢
         T_HEADER="𝐄𝐃𝐔𝐅𝐖𝐄𝐒𝐇 𝐄𝐍𝐓𝐄𝐑𝐏𝐑𝐈𝐒𝐄 𝐌𝐀𝐍𝐀𝐆𝐄𝐑"; T_U_MGMT="𝐔𝐒𝐄𝐑 𝐌𝐀𝐍𝐀𝐆𝐄𝐌𝐄𝐍𝐓"
         T_S_OPS="𝐒𝐄𝐑𝐕𝐄𝐑 𝐎𝐏𝐄𝐑𝐀𝐓𝐈𝐎𝐍𝐒"; T_CONFIG="𝐂𝐎𝐍𝐅𝐈𝐆𝐔𝐑𝐀𝐓𝐈𝐎𝐍 & 𝐂𝐋𝐎𝐔𝐃"
-        T_EXIT="𝐄𝐱𝐢𝐭 𝐃𝐚𝐬𝐡𝐛𝐨ａｒ𝐝"
+        T_EXIT="𝐄𝐱𝐢𝐭 𝐃𝐚𝐬𝐡𝐛𝐨𝐚𝐫𝐝"
         L_HOST="𝐇𝐨𝐬𝐭"; L_TIME="𝐓𝐢𝐦𝐞"; L_IP="𝐈𝐏"; L_ISP="𝐈𝐒𝐏"; L_NS="𝐍𝐒"; L_SEC="𝐒𝐞𝐜"
         L_DAY="𝐃𝐚𝐢𝐥𝐲"; L_MONTH="𝐌𝐨𝐧𝐭𝐡"
         L_RAM="𝐑𝐀𝐌"; L_CPU="𝐂𝐏𝐔"; L_SSH="𝐒𝐒𝐇"; L_XRAY="𝐗𝐑𝐀𝐘"; L_WEB="𝐖𝐄𝐁" ;;
     "sans_bold") # 𝗛𝗶
-        T_HEADER="𝗘𝗗𝗨𝗙𝗪𝗘𝗦𝗛 𝗘𝗡𝗧𝗘𝗥𝗣𝗥𝗜𝗦𝗘 𝗠𝗔𝗡𝗔𝗚𝗘𝗥"; T_U_MGMT="𝗨𝗦𝗘𝗥 𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡Ｔ"
-        T_S_OPS="𝗦𝗘𝗥𝗩𝗘𝗥 𝗢𝗣𝗘𝗥𝐀𝐓𝗜𝗢𝗡𝗦"; T_CONFIG="𝗖𝗢𝗡𝗙𝗜ＧＵＲＡＴＩＯＮ & 𝗖𝗟𝗢ＵＤ"
-        T_EXIT="𝗘𝘅𝗶𝘁 𝗗𝗮𝘀𝗵𝗯𝗼𝗮𝗿ｄ"
-        L_HOST="𝗛𝗼𝘀𝘁"; L_TIME="𝗧𝗶𝗺𝗲"; L_IP="𝗜𝗣"; L_ISP="𝗜𝗦Ｐ"; L_NS="𝗡𝗦"; L_SEC="𝗦𝗲𝗰"
+        T_HEADER="𝗘𝗗𝗨𝗙𝗪𝗘𝗦𝗛 𝗘𝗡𝗧𝗘𝗥𝗣𝗥𝗜𝗦𝗘 𝗠𝗔𝗡𝗔𝗚𝗘𝗥"; T_U_MGMT="𝗨𝗦𝗘𝗥 𝗠𝗔𝗡𝗔𝗚𝗘𝗠𝗘𝗡𝗧"
+        T_S_OPS="𝗦𝗘𝗥𝗩𝗘𝗥 𝗢𝗣𝗘𝗥𝐀𝐓𝗜𝗢𝗡𝗦"; T_CONFIG="𝗖𝗢𝗡𝗙𝗜ＧＵＲＡＴＩ𝗢Ｎ & 𝗖𝗟𝗢𝐔𝗗"
+        T_EXIT="𝗘𝘅𝗶𝘁 𝗗𝗮𝘀𝗵𝗯𝗼𝗮𝗿𝗱"
+        L_HOST="𝗛𝗼𝘀𝘁"; L_TIME="𝗧𝗶𝗺𝗲"; L_IP="𝗜𝗣"; L_ISP="𝗜𝗦𝗣"; L_NS="𝗡𝗦"; L_SEC="𝗦𝗲𝗰"
         L_DAY="𝗗𝗮𝗶𝗹𝘆"; L_MONTH="𝗠𝗼𝗻𝘁𝗵"
         L_RAM="𝗥𝗔𝗠"; L_CPU="𝗖𝗣𝗨"; L_SSH="𝗦𝗦Ｈ"; L_XRAY="𝗫𝗥𝗔𝗬"; L_WEB="𝗪𝗘𝗕" ;;
     "italic") # 𝐻𝑖
-        T_HEADER="𝐸𝐷𝑈𝐹𝑊𝐸𝑆𝐻 𝐸𝑁𝑇𝐸𝑅𝑃𝑅𝐼𝑆𝐸 𝑀𝐴𝑁𝐴𝐺𝐸𝑅"; T_U_MGMT="𝑈𝑆𝐸𝑅 𝑀𝐴𝑁𝐴𝐆𝐸𝑀𝐸Ｎ𝑇"
+        T_HEADER="𝐸𝐷𝑈𝐹𝑊𝐸𝑆𝐻 𝐸𝑁𝑇𝐸𝑅𝑃𝑅𝐼𝑆𝐸 𝑀𝐴𝑁𝐴𝐺𝐸𝑅"; T_U_MGMT="𝑈𝑆𝐸𝑅 𝑀𝐴𝑁𝐴𝐺𝐸𝑀𝐸𝑁𝑇"
         T_S_OPS="𝑆𝐸𝑅𝑉𝐸𝑅 𝑂𝑃𝐸𝑅𝐴𝑇𝐼𝑂𝑁𝑆"; T_CONFIG="𝐶𝑂𝑁𝐹𝐼𝐺𝑈𝑅𝐴𝑇𝐼𝑂𝑁 & 𝐶𝐿𝑂𝑈𝐷"
         T_EXIT="𝐸𝑥𝑖𝑡 𝐷𝑎𝑠ℎ𝑏ｏａ𝑟ｄ"
         L_HOST="𝐻𝑜𝑠𝑡"; L_TIME="𝑇𝑖𝑚𝑒"; L_IP="𝐼𝑃"; L_ISP="𝐼𝑆𝑃"; L_NS="𝑁𝑆"; L_SEC="𝑆𝑒𝑐"
@@ -309,22 +309,7 @@ function auto_reboot() {
 
 function change_banner() { clear; if ! command -v nano &> /dev/null; then apt-get install nano -y > /dev/null 2>&1; fi; nano /etc/issue.net; echo -e "${C_LABEL}Restarting SSH...${RESET}"; service ssh restart; service sshd restart; menu; }
 function change_domain() { clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "Current: $DOMAIN"; read -p "New Domain: " d; if [[ -n "$d" ]]; then echo "$d" > /etc/xray/domain; echo "$d" > /root/domain; echo -e "${C_LABEL}Restarting Services...${RESET}"; systemctl restart nginx xray; echo -e "${C_SUCCESS}Updated!${RESET}"; fi; sleep 1; menu; }
-
-# FIX APPLIED HERE: ADDED NS_DOMAIN UPDATER
-function change_ns() { 
-    clear
-    echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-    echo -e "Current NS: $NS_DOMAIN"
-    read -p "New NS: " n
-    if [[ -n "$n" ]]; then 
-        echo "$n" > /etc/xray/dns
-        echo "$n" > /root/nsdomain
-        NS_DOMAIN="$n"  # <--- FIXED: Updates variable instantly
-        echo -e "${C_SUCCESS}Updated!${RESET}"
-    fi
-    sleep 1
-    menu 
-}
+function change_ns() { clear; echo -e "${C_MAIN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"; echo -e "Current NS: $NS_DOMAIN"; read -p "New NS: " n; if [[ -n "$n" ]]; then echo "$n" > /etc/xray/dns; echo "$n" > /root/nsdomain; echo -e "${C_SUCCESS}Updated!${RESET}"; fi; sleep 1; menu; }
 
 # =========================================================
 # 6. VISUAL UTILITIES
